@@ -1,0 +1,117 @@
+/* Paleta de colores inspirada en bloques de tierra, pasto y piedra */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', Courier, monospace;
+    
+    /* 1. Ruta de la imagen (debes guardarla en una carpeta llamada img) */
+   background-image: url('../img/fondo-minecraft.png');
+    
+    /* 2. Propiedades para cubrir toda la pantalla y centrarla */
+    background-size: cover;          /* Hace que la imagen cubra toda la página */
+    background-position: center;     /* Centra la imagen horizontal y verticalmente */
+    background-repeat: no-repeat;    /* Evita que la imagen se duplique como mosaico */
+    background-attachment: fixed;    /* Mantiene el fondo fijo al hacer scroll */
+    
+    /* 3. Color de respaldo por si la imagen tarda en cargar */
+    background-color: #2c2c2c;       
+}
+
+header {
+    background-color: #14552d; /* Verde Pasto */
+    border-bottom: 4px solid #3c561e;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+div .CraftBarber-logo {
+    width: 100px;
+    display: block;
+    position: absolute;
+}
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 15px;
+    background-color: #866043; /* Marrón Tierra */
+    border: 2px solid #5c422e;
+    margin-left: 5px;
+    font-weight: bold;
+}
+
+nav a:hover, nav a.active {
+    background-color: #bfa37a;
+    color: #000;
+}
+
+.pixel-box {
+    background-color: #4a4a4a; /* Gris Piedra */
+    border: 4px solid #1a1a1a;
+    padding: 20px;
+    max-width: 500px;
+    margin: 40px auto;
+    box-shadow: 5px 5px 0px #000;
+}
+
+h2, h3 {
+    text-shadow: 2px 2px #000;
+    color: #a9ff54;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    background-color: #1a1a1a;
+    border: 2px solid #866043;
+    color: #fff;
+    font-family: inherit;
+}
+
+.btn {
+    display: inline-block;
+    width: 100%;
+    padding: 12px;
+    background-color: #557a2b;
+    color: #fff;
+    border: 2px solid #3c561e;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.btn:hover {
+    background-color: #70a139;
+}
+
+.hidden {
+    display: none;
+}
+
+.pixel-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.pixel-list li {
+    background: #333;
+    margin: 5px 0;
+    padding: 10px;
+    border-left: 5px solid #866043;
+}
