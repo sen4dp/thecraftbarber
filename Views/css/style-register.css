@@ -12,14 +12,79 @@ body, html {
     overflow: hidden;
 }
 
+/* ... Tus estilos de reset y mc-panel se mantienen ... */
+
 .register-container {
     width: 100%;
     height: 100vh;
-    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url('/Views/img/fondo-minecraft.png') no-repeat center center/cover;
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url('../img/fondo-minecraft.png') no-repeat center center/cover;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 10px;
+    gap: 40px;
+    padding: 20px;
+}
+
+.mc-panel-bridge {
+    background-color: #FFFFFF;
+    border: 5px solid #000000;
+    padding: 40px 30px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.mc-title {
+    color: #000000;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+.mc-subtitle {
+    color: #555555;
+    font-size: 0.75rem;
+    margin-bottom: 35px;
+    line-height: 1.6;
+}
+
+.mc-btn-link {
+    display: inline-block;
+    width: 100%;
+    background-color: #008700;
+    color: #FFFFFF;
+    text-decoration: none;
+    border: 4px solid #000000;
+    padding: 15px 20px;
+    font-size: 0.9rem;
+    box-shadow: inset 4px 4px 0px #00b600, inset -4px -4px 0px #004a00;
+    user-select: none;
+    transition: background 0.1s;
+}
+
+.mc-btn-link:hover {
+    background-color: #00a300;
+}
+
+.mc-btn-link:active {
+    transform: translate(2px, 2px);
+    box-shadow: inset 4px 4px 0px #004a00;
+}
+
+@media (max-width: 900px) {
+    .register-container {
+        flex-direction: column;
+        overflow-y: auto;
+        gap: 20px;
+    }
+    .mc-panel, .mc-panel-bridge {
+        max-width: 500px;
+    }
 }
 
 .mc-panel {
@@ -120,4 +185,120 @@ body, html {
 @media (max-width: 768px) {
     .mc-panel { padding: 15px 20px; }
     .radio-group { flex-direction: column; align-items: center; }
+}
+
+/* --- BOTÓN DE HOME ESTILO MINECRAFT --- */
+.mc-btn-home {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: #707070; /* Gris clásico de interfaz */
+    border: 3px solid #000000;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100; /* Asegura que flote por encima del fondo */
+    
+    /* Relieve e iluminación interna en 8-bits */
+    box-shadow: 
+        inset -3px -3px 0px #3a3a3a, /* Sombra interna inferior */
+        inset 3px 3px 0px #aeaeae,   /* Brillo interno superior */
+        3px 3px 0px rgba(0, 0, 0, 0.5); /* Sombra exterior */
+        
+    transition: background 0.1s, transform 0.05s, box-shadow 0.05s;
+}
+
+/* Icono dentro del botón */
+.mc-btn-home svg {
+    display: block;
+    filter: drop-shadow(2px 2px 0px #000000); /* Sombra pixelada al icono de casa */
+}
+
+/* Efecto Hover (Cursor encima se ilumina como en el juego) */
+.mc-btn-home:hover {
+    background-color: #8c8c8c;
+    box-shadow: 
+        inset -3px -3px 0px #4a4a4a,
+        inset 3px 3px 0px #c2c2c2,
+        3px 3px 0px rgba(0, 0, 0, 0.7);
+}
+
+/* Efecto Active (Clic - Se hunde físicamente) */
+.mc-btn-home:active {
+    transform: translate(3px, 3px); /* Se desplaza hacia la sombra */
+    box-shadow: 
+        inset 3px 3px 0px #3a3a3a, /* Se invierte el relieve */
+        inset -3px -3px 0px #aeaeae,
+        0px 0px 0px rgba(0, 0, 0, 0);
+}
+
+/* Ajuste opcional para celulares muy pequeños */
+@media (max-width: 480px) {
+    .mc-btn-home {
+        top: 10px;
+        left: 10px;
+        width: 42px;
+        height: 42px;
+    }
+}
+
+/* --- BOTÓN DE HOME ESTILO MINECRAFT --- */
+.mc-btn-home {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: #707070; /* Gris clásico de interfaz */
+    border: 3px solid #000000;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100; /* Asegura que flote por encima del fondo */
+    
+    /* Relieve e iluminación interna en 8-bits */
+    box-shadow: 
+        inset -3px -3px 0px #3a3a3a, /* Sombra interna inferior */
+        inset 3px 3px 0px #aeaeae,   /* Brillo interno superior */
+        3px 3px 0px rgba(0, 0, 0, 0.5); /* Sombra exterior */
+        
+    transition: background 0.1s, transform 0.05s, box-shadow 0.05s;
+}
+
+/* Icono dentro del botón */
+.mc-btn-home svg {
+    display: block;
+    filter: drop-shadow(2px 2px 0px #000000); /* Sombra pixelada al icono de casa */
+}
+
+/* Efecto Hover (Cursor encima se ilumina como en el juego) */
+.mc-btn-home:hover {
+    background-color: #8c8c8c;
+    box-shadow: 
+        inset -3px -3px 0px #4a4a4a,
+        inset 3px 3px 0px #c2c2c2,
+        3px 3px 0px rgba(0, 0, 0, 0.7);
+}
+
+/* Efecto Active (Clic - Se hunde físicamente) */
+.mc-btn-home:active {
+    transform: translate(3px, 3px); /* Se desplaza hacia la sombra */
+    box-shadow: 
+        inset 3px 3px 0px #3a3a3a, /* Se invierte el relieve */
+        inset -3px -3px 0px #aeaeae,
+        0px 0px 0px rgba(0, 0, 0, 0);
+}
+
+/* Ajuste opcional para celulares muy pequeños */
+@media (max-width: 480px) {
+    .mc-btn-home {
+        top: 10px;
+        left: 10px;
+        width: 42px;
+        height: 42px;
+    }
 }

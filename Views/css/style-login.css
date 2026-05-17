@@ -12,15 +12,84 @@ body, html {
     overflow: hidden;
 }
 
-/* Fondo similar al home */
+/* ... Tus estilos anteriores de reset, body y mc-panel se mantienen ... */
+
 .login-container {
     width: 100%;
     height: 100vh;
-    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url('/Views/img/fondo-minecraft.png') no-repeat center center/cover;
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url('../img/fondo-minecraft.png') no-repeat center center/cover;
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 40px; /* Separación entre el panel verde y el nuevo panel blanco */
     padding: 20px;
+}
+
+/* El nuevo panel puente blanco */
+.mc-panel-bridge {
+    background-color: #FFFFFF;
+    border: 5px solid #000000;
+    padding: 40px 30px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.mc-title {
+    color: #000000;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+.mc-subtitle {
+    color: #555555;
+    font-size: 0.75rem;
+    margin-bottom: 35px;
+    line-height: 1.6;
+}
+
+/* Botón interactivo dentro del panel puente */
+.mc-btn-link {
+    display: inline-block;
+    width: 100%;
+    background-color: #008700; /* Verde Minecraft */
+    color: #FFFFFF;
+    text-decoration: none;
+    border: 4px solid #000000;
+    padding: 15px 20px;
+    font-size: 0.9rem;
+    text-align: center;
+    box-shadow: inset 4px 4px 0px #00b600, inset -4px -4px 0px #004a00;
+    user-select: none;
+    transition: background 0.1s;
+}
+
+.mc-btn-link:hover {
+    background-color: #00a300;
+    box-shadow: inset 4px 4px 0px #00d500, inset -4px -4px 0px #005e00;
+}
+
+.mc-btn-link:active {
+    transform: translate(2px, 2px);
+    box-shadow: inset 4px 4px 0px #004a00;
+}
+
+/* Ajuste para celulares: se apilan verticalmente */
+@media (max-width: 900px) {
+    .login-container {
+        flex-direction: column;
+        overflow-y: auto;
+        gap: 20px;
+    }
+    .mc-panel, .mc-panel-bridge {
+        max-width: 500px;
+    }
 }
 
 /* El Panel Verde Principal */
