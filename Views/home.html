@@ -3,29 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE CRAFTBABER</title>
-    <link rel="stylesheet" href="CSS/styles.css">
-    <script src="JS/main.js" defer></script>
+    <title>The CraftBarber - Home</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <header>
-        <div class="logo">
-            <img src="img/Logo-The CraftBarber.png" alt="CraftBarber Logo">
-        </div>
-        <nav>
-            <a href="home.html">Inicio</a>
-            <a href="dashboard.html">Panel de Control</a>
-        </nav>
-    </header>
 
-   <main class="hero-container">
-    <div class="pixel-box">
-        <h2>¡Bienvenidos al Spawn Point del Estilo!</h2>
-        <p>COLCORE es la solución digital...</p>
-        <div class="button-group">
-            <a href="login.html" class="btn">Ingresar al Servidor</a>
-        </div>
-    </div>
-</main>
+    <main class="home-container"> 
+
+        <div class="logo-box animated-fade-in">
+            <header class="header-logo">
+                <h1 class="welcome-text">BIENVENIDO A:</h1>
+                    <div class="logo-wrapper">
+                        <img src="img/Logo-The CraftBarber.png" alt="The CraftBarber" class="main-logo">
+                    </div>
+             </header>
+        </div>  
+
+        <section class="auth-buttons">
+            <button id="btn-login" class="mc-btn">INICIAR SESION</button>
+            <button id="btn-register" class="mc-btn">REGISTRARSE</button>
+        </section>
+
+    </main>
+
+    <script src="js/main.js"></script>
 </body>
 </html>
