@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (homeBtn) {
         homeBtn.addEventListener("click", () => {
             setTimeout(() => {
-                window.location.href = "index.html"; 
+                window.location.href = "home.html"; 
             }, 100);
         });
     }

@@ -1,15 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
     
     // 1. CONTROL DEL BOTÓN HOME (Volver al Inicio)
-    const homeBtn = document.getElementById("btn-home");
+   const homeBtn = document.getElementById("btn-home");
     if (homeBtn) {
         homeBtn.addEventListener("click", () => {
+            // Pequeño retraso de 100ms para que el usuario alcance a ver la animación de hundimiento
             setTimeout(() => {
-                window.location.href = "index.html"; // Cambia por tu archivo principal si se llama diferente
+                window.location.href = "home.html"; // <-- O "index.html", pon el nombre exacto de tu archivo principal
             }, 100);
         });
     }
-
+    
     // 2. CONTROL DEL ENLACE PUENTE (Ir a Registro con retraso para la animación)
     const registerLink = document.getElementById('link-to-register');
     if (registerLink) {

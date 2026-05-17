@@ -203,3 +203,61 @@ body, html {
     from { transform: scale(0.8); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
+
+/* --- BOTÓN DE HOME ESTILO MINECRAFT --- */
+.mc-btn-home {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: #707070; /* Gris clásico de la interfaz de Minecraft */
+    border: 3px solid #000000; /* Borde negro sólido */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100; /* Para que flote por encima del fondo y los paneles */
+    
+    /* Relieve e iluminación interna en 8-bits */
+    box-shadow: 
+        inset -3px -3px 0px #3a3a3a, /* Sombra interna inferior */
+        inset 3px 3px 0px #aeaeae,   /* Brillo interno superior */
+        3px 3px 0px rgba(0, 0, 0, 0.5); /* Sombra exterior proyectada */
+        
+    transition: background 0.1s, transform 0.05s, box-shadow 0.05s;
+}
+
+/* Icono dentro del botón (la casita SVG) */
+.mc-btn-home svg {
+    display: block;
+    filter: drop-shadow(2px 2px 0px #000000); /* Sombra pixelada al icono */
+}
+
+/* Efecto Hover (Cuando pasas el cursor por encima se ilumina) */
+.mc-btn-home:hover {
+    background-color: #8c8c8c;
+    box-shadow: 
+        inset -3px -3px 0px #4a4a4a,
+        inset 3px 3px 0px #c2c2c2,
+        3px 3px 0px rgba(0, 0, 0, 0.7);
+}
+
+/* Efecto Active (Al hacer clic, el botón se hunde físicamente) */
+.mc-btn-home:active {
+    transform: translate(3px, 3px); /* Se desplaza hacia la sombra */
+    box-shadow: 
+        inset 3px 3px 0px #3a3a3a, /* Se invierte el relieve interno */
+        inset -3px -3px 0px #aeaeae,
+        0px 0px 0px rgba(0, 0, 0, 0);
+}
+
+/* Ajuste para pantallas pequeñas de celulares */
+@media (max-width: 480px) {
+    .mc-btn-home {
+        top: 10px;
+        left: 10px;
+        width: 42px;
+        height: 42px;
+    }
+}
