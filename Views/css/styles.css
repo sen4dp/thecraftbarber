@@ -97,7 +97,6 @@ body, html {
     user-select: none;
 }
 
-/* Efecto Hover (Puntero encima) */
 .mc-btn:hover {
     background-color: #00a300;
     /* Efecto de brillo de selección tipo Minecraft */
