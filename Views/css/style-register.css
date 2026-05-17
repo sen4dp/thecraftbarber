@@ -15,7 +15,7 @@ body, html {
 .register-container {
     width: 100%;
     height: 100vh;
-    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url('img/fondo-minecraft.png') no-repeat center center/cover;
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url('/Views/img/fondo-minecraft.png') no-repeat center center/cover;
     display: flex;
     justify-content: center;
     align-items: center;
