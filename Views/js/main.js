@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
         playClick();
         // Agrega una pequeña pausa para que se aprecie la animación del botón antes de cambiar de página
         setTimeout(() => {
-            window.location.href = "login.html"; // Cambia por tu ruta real
+            window.location.href = "/Views/login.html"; // Cambia por tu ruta real
         }, 150);
     });
 
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     registerBtn.addEventListener("click", () => {
         playClick();
         setTimeout(() => {
-            window.location.href = "registro.html"; // Cambia por tu ruta real
+            window.location.href = "/Views/register.html"; // Cambia por tu ruta real
         }, 150);
     });
 });
