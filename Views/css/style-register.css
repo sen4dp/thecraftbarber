@@ -1,0 +1,123 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Press Start 2P', cursive;
+    image-rendering: pixelated;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.register-container {
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.5)), url('img/fondo-minecraft.png') no-repeat center center/cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+.mc-panel {
+    background-color: #008700;
+    border: 5px solid #000000;
+    padding: 25px 35px;
+    width: 100%;
+    max-width: 650px;
+    box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.3);
+}
+
+.animated-pop-in {
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.title-question {
+    color: #FFFFFF;
+    font-size: 1.6rem;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 3px 3px 0px #000;
+}
+
+.radio-group {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 25px;
+    gap: 10px;
+}
+
+.mc-radio {
+    color: #FFFFFF;
+    font-size: 0.7rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mc-radio input { display: none; }
+
+.checkmark {
+    height: 18px;
+    width: 18px;
+    border: 3px solid #FFFFFF;
+    background-color: #008700;
+    position: relative;
+}
+
+.mc-radio input:checked + .checkmark::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px; width: 8px; height: 8px;
+    background-color: #FFFFFF;
+}
+
+.input-group { margin-bottom: 18px; }
+
+.input-group label {
+    display: block;
+    color: #FFFFFF;
+    font-size: 0.65rem;
+    margin-bottom: 8px;
+    text-shadow: 2px 2px 0px #000;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
+    border: 4px solid #000;
+    outline: none;
+}
+
+.mc-btn-register {
+    width: 100%;
+    background-color: #008700;
+    color: #FFFFFF;
+    border: 4px solid #000;
+    padding: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: inset 4px 4px 0px #00b600, inset -4px -4px 0px #004a00;
+    transition: transform 0.1s;
+    margin-top: 5px;
+}
+
+.mc-btn-register:active {
+    transform: translate(3px, 3px);
+    box-shadow: inset 4px 4px 0px #004a00;
+}
+
+@keyframes popIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .mc-panel { padding: 15px 20px; }
+    .radio-group { flex-direction: column; align-items: center; }
+}

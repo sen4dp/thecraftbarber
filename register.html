@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The CraftBarber - Registro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/Views/css/style-register.css">
+</head>
+<body>
+
+    <main class="register-container">
+        
+        <div class="mc-panel animated-pop-in">
+            <header class="role-selector">
+                <h2 class="title-question">¿ERES?</h2>
+                <div class="radio-group">
+                    <label class="mc-radio">
+                        <input type="radio" name="role" value="usuario" checked>
+                        <span class="checkmark"></span>
+                        USUARIO
+                    </label>
+                    <label class="mc-radio">
+                        <input type="radio" name="role" value="barbero">
+                        <span class="checkmark"></span>
+                        BARBERO
+                    </label>
+                    <label class="mc-radio">
+                        <input type="radio" name="role" value="dueno">
+                        <span class="checkmark"></span>
+                        DUEÑO
+                    </label>
+                </div>
+            </header>
+
+            <form id="register-form" class="register-form">
+                <div class="input-group">
+                    <label>NOMBRE DE USUARIO</label>
+                    <input type="text" id="reg-username" required>
+                </div>
+                
+                <div class="input-group">
+                    <label>EMAIL</label>
+                    <input type="email" id="reg-email" required>
+                </div>
+
+                <div class="input-group">
+                    <label>CONTRASEÑA</label>
+                    <input type="password" id="reg-password" required>
+                </div>
+
+                <div class="input-group">
+                    <label>REPETIR CONTRASEÑA</label>
+                    <input type="password" id="reg-confirm-password" required>
+                </div>
+
+                <button type="submit" class="mc-btn-register">REGISTRARSE</button>
+            </form>
+        </div>
+
+    </main>
+
+    <script src="/Views/js/script-register.js"></script>
+</body>
+</html>
