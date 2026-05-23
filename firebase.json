@@ -1,0 +1,10 @@
+{
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "The CraftBarber",
+        "supportEmail": "sena.dennys.perdomo@gmail.com"
+      }
+    }
+  }
+}
