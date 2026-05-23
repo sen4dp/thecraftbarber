@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
         homeBtn.addEventListener("click", () => {
             // 100ms de retraso para que se aprecie físicamente la animación de hundirse
             setTimeout(() => {
-                window.location.href = "index.html"; // Redirige a tu página principal
+                window.location.href = "home.html"; // Redirige a tu página principal
             }, 100);
         });
     }
