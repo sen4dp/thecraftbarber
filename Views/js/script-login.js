@@ -111,9 +111,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Redirección adaptada a los nombres de tus nuevos dashboards
                 if (selectedRole === 'barbero') {
-                    window.location.href = 'barbero-dashboard.html';
+                    window.location.href = 'dashboard-barbero.html';
                 } else if (selectedRole === 'dueno') {
-                    window.location.href = 'dueno-dashboard.html';
+                    window.location.href = 'dashboard-admin.html';
                 } else if (selectedRole === 'usuario') {
                     window.location.href = 'dashboard-usuario.html'; // Redirige al dashboard de usuario
                 }
