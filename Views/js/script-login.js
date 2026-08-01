@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else if (selectedRole === 'dueno') {
                     window.location.href = 'dueno-dashboard.html';
                 } else {
-                    window.location.href = 'usuario-dashboard.html';
+                    window.location.href = 'dashboard-usuario.html'; // Redirige al dashboard de usuario
                 }
                 
             } catch (error) {
