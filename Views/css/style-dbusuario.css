@@ -48,7 +48,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 12px 20px;
-  color: #000000;
+  color: #ffffff;
 }
 
 .user-info {
@@ -68,7 +68,7 @@ body {
   height: 45px;
   border: 3px solid var(--border-color);
   border-radius: 50%;
-  background-color: #347621;
+  background-color: #ffffff;
   background-size: cover;
   background-position: center;
 }
@@ -76,7 +76,7 @@ body {
 .user-name {
   font-size: 12px;
   font-weight: bold;
-  color: #000000;
+  color: #ffffff;
 }
 
 .nav-buttons {
@@ -87,8 +87,8 @@ body {
 .btn-icon {
   width: 40px;
   height: 40px;
-  background-color: #347621;
-  border: 3px solid var(--primary-green);
+  background-color: #ffffff;
+  border: 3px solid var(--border-color);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -107,7 +107,7 @@ body {
 
 .btn-icon:hover {
   transform: translateY(-2px);
-  background-color: #347621;
+  background-color: #eaf5e6;
 }
 
 .btn-icon:active {
@@ -129,7 +129,7 @@ body {
   }
 }
 
-/* TARJETAS CON ANIMACIÓN */
+/* TARJETAS Y FADE-IN */
 .card {
   border: 4px solid var(--border-color);
   background-color: #ffffff;
@@ -144,7 +144,6 @@ body {
   box-shadow: 0px 9px 0px var(--dark-green);
 }
 
-/* ANIMACIÓN FADE-IN */
 .fade-in {
   animation: fadeIn 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
@@ -160,28 +159,57 @@ body {
   }
 }
 
-/* COLUMNA IZQUIERDA */
+/* COLUMNA IZQUIERDA: CONTENEDOR SUPERPUESTO EN DIAGONAL */
 .left-column {
   display: flex;
   flex-direction: column;
-  gap: 20px;
 }
 
-.promo-card {
-  height: 220px;
+.promo-wrapper {
+  position: relative;
+  width: 100%;
+  height: 420px;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+}
+
+.promo-card {
+  position: absolute;
+  width: 75%;
+  height: 250px;
+  background-color: #ffffff;
+  border: 4px solid var(--border-color);
   padding: 8px;
+  box-shadow: 6px 6px 0px var(--border-color);
+  transition: transform 0.3s ease, z-index 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.promo-1 {
+  top: 15px;
+  left: 20px;
+  z-index: 2;
+}
+
+.promo-2 {
+  bottom: 15px;
+  right: 20px;
+  z-index: 1;
+}
+
+.promo-card:hover {
+  z-index: 10 !important;
+  transform: scale(1.05) translate(-3px, -3px);
+  box-shadow: 10px 10px 0px var(--primary-green);
 }
 
 .promo-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border: 4px solid var(--primary-green);
-  border-radius: 20px;
+  border: 3px solid var(--primary-green);
+  border-radius: 8px;
 }
 
 /* COLUMNA DERECHA */
@@ -230,16 +258,16 @@ body {
 
 .appointment-item {
   background-color: #347621;
-  border: 2px solid var(--primary-green);
+  border: 2px solid var(--border-color);
   padding: 10px;
   margin-bottom: 8px;
   font-size: 9px;
-  color: #000000;
+  color: #ffffff;
 }
 
 /* BOTÓN AGENDA TU CITA */
 .agenda-card {
-  height: 160px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -276,7 +304,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(52, 118, 33, 0.8);
+  background-color: rgba(0, 0, 0, 0.75);
   display: none;
   align-items: center;
   justify-content: center;
@@ -287,12 +315,12 @@ body {
 .modal-content {
   background-color: #347621;
   border: 5px solid var(--border-color);
-  box-shadow: 8px 8px 0px var(--primary-green);
+  box-shadow: 8px 8px 0px #1a3811;
   padding: 25px;
   width: 90%;
   max-width: 420px;
   position: relative;
-  color: #000000;
+  color: #ffffff;
 }
 
 .modal-close {
@@ -302,6 +330,7 @@ body {
   font-size: 20px;
   background: none;
   border: none;
+  color: #ffffff;
   cursor: pointer;
   font-weight: bold;
 }
@@ -310,7 +339,7 @@ body {
   font-size: 12px;
   text-align: center;
   margin-bottom: 20px;
-  color: var(--primary-green);
+  color: #ffffff;
 }
 
 .profile-avatar-container {
@@ -324,7 +353,7 @@ body {
   height: 80px;
   border: 3px solid var(--border-color);
   border-radius: 50%;
-  background-color: #347621;
+  background-color: #ffffff;
   background-size: cover;
   background-position: center;
 }
@@ -338,14 +367,15 @@ body {
 
 .form-group label {
   font-size: 8px;
-  color: var(--dark-green);
+  color: #ffffff;
 }
 
 .form-group input {
   padding: 10px;
   border: 3px solid var(--border-color);
   font-size: 9px;
-  background-color: #347621;
+  background-color: #ffffff;
+  color: #000000;
   width: 100%;
 }
 
@@ -360,7 +390,7 @@ body {
 
 .toggle-password {
   border: 3px solid var(--border-color);
-  background: var(--primary-green);
+  background: var(--dark-green);
   color: white;
   padding: 0 10px;
   cursor: pointer;
@@ -378,13 +408,13 @@ body {
   box-shadow: 0px 6px 0px #7b241c;
 }
 
-/* FOOTER COMPLETO */
+/* FOOTER COMPLETO Y TEXTO EN BLANCO */
 .footer {
   margin-top: auto;
   background-color: #0f2d06;
   border: 4px solid var(--border-color);
   box-shadow: 0px 6px 0px var(--dark-green);
-  color: #000000;
+  color: #ffffff;
   padding: 20px;
 }
 
@@ -397,14 +427,16 @@ body {
 
 .footer-section h3 {
   font-size: 10px;
-  color: var(--primary-green);
+  color: #4f9f34;
   margin-bottom: 10px;
 }
 
-.footer-section p, .footer-section li, .footer-section a {
+.footer-section p, 
+.footer-section li, 
+.footer-section a {
   font-size: 8px;
   line-height: 1.8;
-  color: #333333;
+  color: #ffffff;
   text-decoration: none;
 }
 
@@ -413,7 +445,7 @@ body {
 }
 
 .footer-section a:hover {
-  color: var(--primary-green);
+  color: #4f9f34;
 }
 
 .footer-icons {
@@ -425,11 +457,11 @@ body {
 .footer-icon-link {
   width: 32px;
   height: 32px;
-  border: 2px solid var(--primary-green);
+  border: 2px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f4fbf2;
+  background-color: #ffffff;
 }
 
 .footer-icon-link img {
@@ -444,7 +476,7 @@ body {
 }
 
 .footer-bottom {
-  border-top: 2px solid #e0e0e0;
+  border-top: 2px solid #235116;
   padding-top: 10px;
   text-align: center;
   font-size: 8px;

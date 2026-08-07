@@ -26,7 +26,7 @@ const firebaseConfig = {
     measurementId: "G-HCPNHKKS7C"
 };
 
-// Inicializar Firebase
+// Inicializar Firebase y Servicios
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalPassword = document.getElementById('modal-password');
     const togglePasswordBtn = document.getElementById('toggle-password-btn');
 
-    // Cargar nombre temporal desde LocalStorage si existe
+    // Cargar nombre guardado en LocalStorage
     const cachedUsername = localStorage.getItem('username');
     if (cachedUsername && userNameElement) {
         userNameElement.textContent = cachedUsername.toUpperCase();
@@ -65,19 +65,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 userNameElement.textContent = currentName.toUpperCase();
             }
 
-            // Llenar campos del modal con información del usuario
+            // Cargar datos en el modal
             if (modalUsername) modalUsername.value = currentName.toUpperCase();
-            if (modalEmail) modalEmail.value = user.email || 'no-email@craftbarber.com';
+            if (modalEmail) modalEmail.value = user.email || 'sin-correo@craftbarber.com';
 
             // Cargar citas desde Firestore
             await fetchUserAppointments(user.uid);
         } else {
-            // Si no hay sesión, regresa al login
+            // Si no hay sesión, se devuelve al login
             window.location.href = 'index.html'; 
         }
     });
 
-    // OBTENER CITAS DE FIRESTORE
+    // CONSULTAR CITAS EN FIRESTORE
     async function fetchUserAppointments(userId) {
         try {
             const citasRef = collection(db, 'citas');
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // MODAL PERFIL - VENTANA EMERGENTE
+    // MODAL PERFIL - ABRIR/CERRAR
     if (profileTrigger && profileModal) {
         profileTrigger.addEventListener('click', () => {
             profileModal.style.display = 'flex';
@@ -129,14 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cerrar modal al hacer clic afuera
     window.addEventListener('click', (e) => {
         if (e.target === profileModal) {
             profileModal.style.display = 'none';
         }
     });
 
-    // TOGGLE MOSTRAR/OCULTAR CONTRASEÑA EN MODAL
+    // MOSTRAR / OCULTAR CONTRASEÑA EN MODAL
     if (togglePasswordBtn && modalPassword) {
         let isVisible = false;
         togglePasswordBtn.addEventListener('click', () => {
@@ -146,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ACCIÓN BOTÓN AGENDA
+    // BOTÓN NAVEGAR A AGENDAR CITA
     if (btnAgenda) {
         btnAgenda.addEventListener('click', () => {
             setTimeout(() => {
