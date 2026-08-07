@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await signOut(auth);
                 localStorage.clear();
-                window.location.href = 'index.html';
+                window.location.href = 'home.html';
             } catch (error) {
                 console.error('Error al cerrar sesión:', error);
             }
