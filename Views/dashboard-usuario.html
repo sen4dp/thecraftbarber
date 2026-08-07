@@ -5,8 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The CraftBarber - Iniciar Sesion</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="">
+    <link rel="stylesheet" href="/Views/css/style-dbusuario.css">
 </head>
 <body>
-    Hola, esta es la incompleta pagina de usuario
+  <!-- Barra Superior Navbar -->
+  <header class="navbar">
+    <div class="user-info">
+      <div class="avatar"></div>
+      <span class="user-name">NOMBRE DE USUARIO</span>
+    </div>
+    <nav class="nav-buttons">
+      <button class="btn-icon"></button>
+      <button class="btn-icon"></button>
+      <button class="btn-icon"></button>
+      <button class="btn-icon"></button>
+      <button class="btn-icon"></button>
+    </nav>
+  </header>
+
+  <!-- Contenido Principal -->
+  <main class="main-container">
+    
+    <!-- Columna Izquierda: Promociones -->
+    <section class="left-column">
+      <div class="card promo-card">
+        <div class="promo-img">IMÁGENES PROMOCIONALES</div>
+      </div>
+      <div class="card promo-card">
+        <div class="promo-img">OTRA IMAGEN PROMOCIONAL</div>
+      </div>
+    </section>
+
+    <!-- Columna Derecha: Citas y Agenda -->
+    <section class="right-column">
+      
+      <!-- Bloque: Ver tus Citas -->
+      <div class="card appointments-card">
+        <h2>VER TUS CITAS</h2>
+        <div class="calendar-container" id="calendar-container">
+          <!-- El contenido se alterará desde JS según la disponibilidad de citas -->
+          <p class="empty-message" id="empty-message">AÚN NO HAY CITAS AGENDADAS :(</p>
+        </div>
+      </div>
+
+      <!-- Bloque: Agenda tu Cita -->
+      <div class="card agenda-card">
+        <button class="btn-primary" id="btn-agenda">AGENDA TU CITA</button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="/Views/js/script-dbusuario.js"></script>
 </body>
+</html>
