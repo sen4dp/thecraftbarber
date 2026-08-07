@@ -26,43 +26,58 @@ const firebaseConfig = {
     measurementId: "G-HCPNHKKS7C"
 };
 
-// Inicializar Firebase y Servicios
+// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 // ==========================================
-// 2. LOGICA DEL DASHBOARD
+// 2. LÓGICA DEL DASHBOARD DE USUARIO
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+
+    // Elementos de la Interfaz
     const userNameElement = document.getElementById('user-name-display');
     const calendarContainer = document.getElementById('calendar-container');
     const btnAgenda = document.getElementById('btn-agenda');
     const btnLogout = document.getElementById('btn-logout');
 
-    // Cargar nombre temporal desde localStorage si existe
+    // Elementos del Modal de Perfil
+    const profileTrigger = document.getElementById('user-profile-trigger');
+    const profileModal = document.getElementById('profile-modal');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const modalUsername = document.getElementById('modal-username');
+    const modalEmail = document.getElementById('modal-email');
+    const modalPassword = document.getElementById('modal-password');
+    const togglePasswordBtn = document.getElementById('toggle-password-btn');
+
+    // Cargar nombre temporal desde LocalStorage si existe
     const cachedUsername = localStorage.getItem('username');
     if (cachedUsername && userNameElement) {
         userNameElement.textContent = cachedUsername.toUpperCase();
     }
 
-    // VERIFICACIÓN DE SESIÓN EN TIEMPO REAL
+    // CONTROL DE SESIÓN EN TIEMPO REAL
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // Usuario autenticado
-            if (userNameElement && !cachedUsername) {
-                userNameElement.textContent = (user.displayName || user.email.split('@')[0]).toUpperCase();
+            const currentName = cachedUsername || user.displayName || user.email.split('@')[0];
+            if (userNameElement) {
+                userNameElement.textContent = currentName.toUpperCase();
             }
 
-            // Cargar las citas del usuario desde Firestore
+            // Llenar campos del modal con información del usuario
+            if (modalUsername) modalUsername.value = currentName.toUpperCase();
+            if (modalEmail) modalEmail.value = user.email || 'no-email@craftbarber.com';
+
+            // Cargar citas desde Firestore
             await fetchUserAppointments(user.uid);
         } else {
-            // Si no hay sesión activa, redirige al login
+            // Si no hay sesión, regresa al login
             window.location.href = 'index.html'; 
         }
     });
 
-    // FUNCIÓN PARA OBTENER CITAS DESDE FIRESTORE
+    // OBTENER CITAS DE FIRESTORE
     async function fetchUserAppointments(userId) {
         try {
             const citasRef = collection(db, 'citas');
@@ -77,8 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const cita = doc.data();
                     htmlContent += `
                         <li class="appointment-item">
-                            <span><strong>Día:</strong> ${cita.fecha}</span> - 
-                            <span><strong>Hora:</strong> ${cita.hora}</span>
+                            <span><strong>FECHA:</strong> ${cita.fecha || 'N/A'}</span><br>
+                            <span><strong>HORA:</strong> ${cita.hora || 'N/A'}</span>
                         </li>
                     `;
                 });
@@ -86,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 calendarContainer.innerHTML = htmlContent;
             }
         } catch (error) {
-            console.error('Error al consultar citas en Firestore:', error);
+            console.error('Error al consultar citas:', error);
             renderEmptyState();
         }
     }
@@ -101,16 +116,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // EVENTOS DE BOTONES
+    // MODAL PERFIL - VENTANA EMERGENTE
+    if (profileTrigger && profileModal) {
+        profileTrigger.addEventListener('click', () => {
+            profileModal.style.display = 'flex';
+        });
+    }
+
+    if (modalCloseBtn && profileModal) {
+        modalCloseBtn.addEventListener('click', () => {
+            profileModal.style.display = 'none';
+        });
+    }
+
+    // Cerrar modal al hacer clic afuera
+    window.addEventListener('click', (e) => {
+        if (e.target === profileModal) {
+            profileModal.style.display = 'none';
+        }
+    });
+
+    // TOGGLE MOSTRAR/OCULTAR CONTRASEÑA EN MODAL
+    if (togglePasswordBtn && modalPassword) {
+        let isVisible = false;
+        togglePasswordBtn.addEventListener('click', () => {
+            isVisible = !isVisible;
+            modalPassword.type = isVisible ? 'text' : 'password';
+            togglePasswordBtn.textContent = isVisible ? '🙈' : '👁️';
+        });
+    }
+
+    // ACCIÓN BOTÓN AGENDA
     if (btnAgenda) {
         btnAgenda.addEventListener('click', () => {
             setTimeout(() => {
-                // Redirección al formulario de agendamiento
                 window.location.href = 'agenda.html'; 
             }, 100);
         });
     }
 
+    // CERRAR SESIÓN
     if (btnLogout) {
         btnLogout.addEventListener('click', async () => {
             try {

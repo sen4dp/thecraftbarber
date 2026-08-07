@@ -1,25 +1,35 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The CraftBarber - Iniciar Sesion</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/Views/css/style-dbusuario.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Usuario - The Craft Barber</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+  <!-- Capa de sombra sobre el fondo -->
+  <div class="background-overlay"></div>
+
   <!-- Barra Superior Navbar -->
   <header class="navbar">
-    <div class="user-info">
-      <div class="avatar"></div>
-      <span class="user-name">/span>
+    <div class="user-info" id="user-profile-trigger" title="Ver mi perfil">
+      <div class="avatar" id="navbar-avatar"></div>
+      <span class="user-name" id="user-name-display">CARGANDO...</span>
     </div>
     <nav class="nav-buttons">
-      <button class="btn-icon"></button>
-      <button class="btn-icon"></button>
-      <button class="btn-icon"></button>
-      <button class="btn-icon"></button>
-      <button class="btn-icon"></button>
+      <a href="https://x.com" target="_blank" class="btn-icon" title="X (Twitter)">
+        <img src="img/logo-x.png" alt="X">
+      </a>
+      <a href="https://facebook.com" target="_blank" class="btn-icon" title="Facebook">
+        <img src="img/logo-facebook.png" alt="Facebook">
+      </a>
+      <a href="https://instagram.com" target="_blank" class="btn-icon" title="Instagram">
+        <img src="img/logo-instagram.png" alt="Instagram">
+      </a>
+      <a href="https://tiktok.com" target="_blank" class="btn-icon" title="TikTok">
+        <img src="img/logo-tiktok.png" alt="TikTok">
+      </a>
     </nav>
   </header>
 
@@ -28,11 +38,11 @@
     
     <!-- Columna Izquierda: Promociones -->
     <section class="left-column">
-      <div class="card promo-card">
-        <div class="promo-img">IMÁGENES PROMOCIONALES</div>
+      <div class="card promo-card fade-in">
+        <img src="img/promocional-1.png" alt="Promoción 1" class="promo-img">
       </div>
-      <div class="card promo-card">
-        <div class="promo-img">OTRA IMAGEN PROMOCIONAL</div>
+      <div class="card promo-card fade-in">
+        <img src="img/promocional-2.png" alt="Promoción 2" class="promo-img">
       </div>
     </section>
 
@@ -43,7 +53,6 @@
       <div class="card appointments-card">
         <h2>VER TUS CITAS</h2>
         <div class="calendar-container" id="calendar-container">
-          <!-- El contenido se alterará desde JS según la disponibilidad de citas -->
           <p class="empty-message" id="empty-message">AÚN NO HAY CITAS AGENDADAS :(</p>
         </div>
       </div>
@@ -57,6 +66,91 @@
 
   </main>
 
-  <script src="/Views/js/script-dbusuario.js"></script>
+  <!-- MODAL DE PERFIL DE USUARIO -->
+  <div class="modal-overlay" id="profile-modal">
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close-btn">&times;</button>
+      <h2 class="modal-title">PERFIL DE USUARIO</h2>
+      
+      <div class="profile-avatar-container">
+        <div class="profile-avatar-box" id="modal-avatar">
+          <!-- Si no hay foto, se muestra vacío/por defecto -->
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>NOMBRE DE USUARIO</label>
+        <input type="text" id="modal-username" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>CORREO ELECTRÓNICO</label>
+        <input type="email" id="modal-email" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>CONTRASEÑA</label>
+        <div class="password-wrapper">
+          <input type="password" id="modal-password" value="********" readonly>
+          <button type="button" class="toggle-password" id="toggle-password-btn">👁️</button>
+        </div>
+      </div>
+
+      <button class="btn-primary btn-logout" id="btn-logout">CERRAR SESIÓN</button>
+    </div>
+  </div>
+
+  <!-- PIE DE PÁGINA COMPLETO -->
+  <footer class="footer">
+    <div class="footer-container">
+      
+      <!-- Sección NAVEGACIÓN Y REDES -->
+      <div class="footer-section">
+        <h3>NAVEGACIÓN</h3>
+        <ul>
+          <li><a href="/Views/home.html">▶ Inicio (Home)</a></li>
+        </ul>
+        <h3>CONTACTO RÁPIDO</h3>
+        <div class="footer-icons">
+          <a href="https://maps.google.com" target="_blank" class="footer-icon-link" title="Google Maps">
+            <img src="img/logo-maps.png" alt="Google Maps">
+          </a>
+          <a href="mailto:contacto@thecraftbarber.com" class="footer-icon-link" title="Gmail">
+            <img src="img/logo-gmail.png" alt="Gmail">
+          </a>
+        </div>
+      </div>
+
+      <!-- Sección DATOS DE CONTACTO -->
+      <div class="footer-section">
+        <h3>INFORMACIÓN</h3>
+        <p><strong>TELÉFONO:</strong> +57 300 000 0000</p>
+        <p><strong>EMAIL:</strong> contacto@thecraftbarber.com</p>
+        <p><strong>DIRECCIÓN:</strong> Calle Falsa 123, Bogotá, Colombia</p>
+      </div>
+
+      <!-- Sección MAPA DINÁMICO -->
+      <div class="footer-section footer-map">
+        <h3>UBICACIÓN</h3>
+        <div class="map-responsive">
+          <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d127251.34005953535!2d-74.1500!3d4.6097!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3f9bfd2da6ed2f%3A0x19036f84172422c5!2sBogot%C3%A1!5e0!3m2!1ses!2sco!4v1600000000000!5m2!1ses!2sco" 
+            width="100%" 
+            height="150" 
+            style="border:0;" 
+            allowfullscreen="" 
+            loading="lazy">
+          </iframe>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 THE CRAFT BARBER. TODOS LOS DERECHOS RESERVADOS.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="script.js"></script>
 </body>
 </html>
