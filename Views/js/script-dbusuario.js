@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetchUserAppointments(user.uid);
         } else {
             // Si no hay sesión, se devuelve al login
-            window.location.href = 'index.html'; 
+            window.location.href = 'home.html'; 
         }
     });
 
