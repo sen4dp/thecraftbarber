@@ -98,7 +98,7 @@ body, html {
 }
 
 .mc-btn:hover {
-    background-color: #00a300;
+    background-color: #40912a;
     /* Efecto de brillo de selección tipo Minecraft */
     box-shadow: 
         inset -4px -4px 0px #3b8526,
@@ -110,8 +110,8 @@ body, html {
 .mc-btn:active {
     transform: translate(4px, 4px); /* Se desplaza hacia la posición de la sombra */
     box-shadow: 
-        inset 4px 4px 0px #3b8526, /* Se invierten las sombras internas */
-        inset -4px -4px 0px #2a631c,
+        inset 4px 4px 0px #40912a, /* Se invierten las sombras internas */
+        inset -4px -4px 0px #3b8526,
         0px 0px 0px rgba(0, 0, 0, 0); /* Desaparece la sombra externa */
 }
 
