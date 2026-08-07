@@ -78,7 +78,7 @@ body, html {
 
 /* Botón Estilo Minecraft Verde */
 .mc-btn {
-    background-color: #008700; /* Verde base */
+    background-color: #3b8526; /* Verde base */
     color: #FFFFFF;
     font-size: 1.1rem;
     padding: 20px 35px;
@@ -89,8 +89,8 @@ body, html {
     
     /* Sombra 3D simulada en los bordes interiores y exteriores */
     box-shadow: 
-        inset -4px -4px 0px #004a00, /* Sombra interna inferior/derecha */
-        inset 4px 4px 0px #00b600,   /* Brillo interno superior/izquierda */
+        inset -4px -4px 0px #2a631c, /* Sombra interna inferior/derecha */
+        inset 4px 4px 0px #3b8526,   /* Brillo interno superior/izquierda */
         4px 4px 0px rgba(0, 0, 0, 0.6); /* Sombra externa proyectada */
         
     transition: background 0.1s, transform 0.05s, box-shadow 0.05s;
@@ -101,8 +101,8 @@ body, html {
     background-color: #00a300;
     /* Efecto de brillo de selección tipo Minecraft */
     box-shadow: 
-        inset -4px -4px 0px #005e00,
-        inset 4px 4px 0px #00d500,
+        inset -4px -4px 0px #3b8526,
+        inset 4px 4px 0px #2a631c,
         4px 4px 0px rgba(0, 0, 0, 0.8);
 }
 
@@ -110,8 +110,8 @@ body, html {
 .mc-btn:active {
     transform: translate(4px, 4px); /* Se desplaza hacia la posición de la sombra */
     box-shadow: 
-        inset 4px 4px 0px #004a00, /* Se invierten las sombras internas */
-        inset -4px -4px 0px #00b600,
+        inset 4px 4px 0px #3b8526, /* Se invierten las sombras internas */
+        inset -4px -4px 0px #2a631c,
         0px 0px 0px rgba(0, 0, 0, 0); /* Desaparece la sombra externa */
 }
 
