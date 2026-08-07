@@ -212,7 +212,7 @@ body {
   justify-content: center;
   padding: 15px;
   text-align: center;
-  background-color: #347621;
+  background-color: #ffffff;
   overflow-y: auto;
 }
 
@@ -448,5 +448,5 @@ body {
   padding-top: 10px;
   text-align: center;
   font-size: 8px;
-  color: #666666;
+  color: #ffffff;
 }
