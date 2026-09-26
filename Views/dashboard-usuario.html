@@ -14,8 +14,11 @@
   <!-- Barra Superior Navbar -->
   <header class="navbar">
     <div class="user-info" id="user-profile-trigger" title="Ver mi perfil">
-      <div class="avatar" id="navbar-avatar"></div>
-      <span class="user-name" id="user-name-display">CARGANDO...</span>
+      <div class="avatar" id="navbar-avatar"><span id="navbar-avatar-initial"></span></div>
+      <div class="user-info-text">
+        <span class="user-name" id="user-name-display">CARGANDO...</span>
+        <span class="user-role">MI PERFIL</span>
+      </div>
     </div>
     <nav class="nav-buttons">
       <a href="https://x.com" target="_blank" class="btn-icon" title="X (Twitter)">
@@ -34,37 +37,80 @@
   </header>
 
   <!-- Contenido Principal -->
-  <main class="main-container">
-    
-    <!-- Columna Izquierda: Promociones Diagonal Superpuestas -->
-    <section class="left-column">
-      <div class="promo-wrapper">
-        <div class="promo-card promo-1 fade-in">
-          <img src="/Views/img/promocional-1.png" alt="Promoción 1" class="promo-img">
+  <main class="dashboard">
+
+    <!-- HERO: bienvenida + resumen -->
+    <section class="hero-banner fade-in">
+      <div class="hero-text">
+        <p class="hero-eyebrow" id="hero-greeting">HOLA</p>
+        <h1 class="hero-title" id="hero-username">USUARIO</h1>
+        <p class="hero-date" id="hero-date"></p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-chip">
+          <span class="stat-value" id="stat-total">0</span>
+          <span class="stat-label">CITAS TOTALES</span>
         </div>
-        <div class="promo-card promo-2 fade-in">
-          <img src="/Views/img/promocional-2.png" alt="Promoción 2" class="promo-img">
+        <div class="stat-chip stat-chip-accent">
+          <span class="stat-value" id="stat-next">—</span>
+          <span class="stat-label">PRÓXIMA CITA</span>
         </div>
       </div>
     </section>
 
-    <!-- Columna Derecha: Citas y Agenda -->
-    <section class="right-column">
-      
-      <!-- Bloque: Ver tus Citas -->
-      <div class="card appointments-card">
-        <h2>VER TUS CITAS</h2>
-        <div class="calendar-container" id="calendar-container">
-          <p class="empty-message" id="empty-message">AÚN NO HAY CITAS AGENDADAS :(</p>
-        </div>
+    <div class="dashboard-grid">
+
+      <!-- COLUMNA PRINCIPAL: citas -->
+      <div class="col-main">
+
+        <!-- Cita destacada -->
+        <section class="card next-appointment-card fade-in" id="next-appointment-card">
+          <h2 class="card-title">TU PRÓXIMA CITA</h2>
+          <div id="next-appointment-content">
+            <p class="empty-message">AÚN NO HAY CITAS AGENDADAS :(</p>
+          </div>
+        </section>
+
+        <!-- Historial completo -->
+        <section class="card history-card fade-in">
+          <div class="card-header-row">
+            <h2 class="card-title">MIS CITAS</h2>
+            <span class="badge-count" id="history-count">0</span>
+          </div>
+          <div class="appointments-grid" id="calendar-container">
+            <p class="empty-message" id="empty-message">AÚN NO HAY CITAS AGENDADAS :(</p>
+          </div>
+        </section>
+
       </div>
 
-      <!-- Bloque: Agenda tu Cita -->
-      <div class="card agenda-card">
-        <button class="btn-primary" id="btn-agenda">AGENDA TU CITA</button>
-      </div>
+      <!-- COLUMNA LATERAL: acciones y promos -->
+      <aside class="col-side">
 
-    </section>
+        <section class="card agenda-card fade-in">
+          <h2 class="card-title">¿LISTO PARA UN NUEVO CORTE?</h2>
+          <p class="agenda-subtitle">Agenda tu cita en segundos</p>
+          <button class="btn-primary" id="btn-agenda">AGENDA TU CITA</button>
+        </section>
+
+        <section class="card promo-card fade-in">
+          <h2 class="card-title">PROMOCIONES</h2>
+          <div class="promo-slider">
+            <div class="promo-slide active" data-slide="0">
+              <img src="/Views/img/promocional-1.png" alt="Promoción 1" class="promo-img">
+            </div>
+            <div class="promo-slide" data-slide="1">
+              <img src="/Views/img/promocional-2.png" alt="Promoción 2" class="promo-img">
+            </div>
+          </div>
+          <div class="promo-dots">
+            <button class="promo-dot active" data-dot="0" aria-label="Ver promoción 1"></button>
+            <button class="promo-dot" data-dot="1" aria-label="Ver promoción 2"></button>
+          </div>
+        </section>
+
+      </aside>
+    </div>
 
   </main>
 
@@ -73,11 +119,9 @@
     <div class="modal-content">
       <button class="modal-close" id="modal-close-btn">&times;</button>
       <h2 class="modal-title">PERFIL DE USUARIO</h2>
-      
+
       <div class="profile-avatar-container">
-        <div class="profile-avatar-box" id="modal-avatar">
-          <!-- Espacio reservado para la foto de perfil -->
-        </div>
+        <div class="profile-avatar-box" id="modal-avatar"><span id="modal-avatar-initial"></span></div>
       </div>
 
       <div class="form-group">
@@ -105,7 +149,7 @@
   <!-- PIE DE PÁGINA COMPLETO -->
   <footer class="footer">
     <div class="footer-container">
-      
+
       <!-- Sección NAVEGACIÓN Y REDES -->
       <div class="footer-section">
         <h3>NAVEGACIÓN</h3>
@@ -135,12 +179,12 @@
       <div class="footer-section footer-map">
         <h3>UBICACIÓN</h3>
         <div class="map-responsive">
-          <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d127251.34005953535!2d-74.1500!3d4.6097!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3f9bfd2da6ed2f%3A0x19036f84172422c5!2sBogot%C3%A1!5e0!3m2!1ses!2sco!4v1600000000000!5m2!1ses!2sco" 
-            width="100%" 
-            height="130" 
-            style="border:0;" 
-            allowfullscreen="" 
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d127251.34005953535!2d-74.1500!3d4.6097!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3f9bfd2da6ed2f%3A0x19036f84172422c5!2sBogot%C3%A1!5e0!3m2!1ses!2sco!4v1600000000000!5m2!1ses!2sco"
+            width="100%"
+            height="130"
+            style="border:0;"
+            allowfullscreen=""
             loading="lazy">
           </iframe>
         </div>
