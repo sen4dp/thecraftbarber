@@ -45,19 +45,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 errorDiv.style.display = 'none';
             }, 3000);
         } else {
-            // Por si acaso no has creado el div del error en el HTML, usa un alert nativo
             alert(message);
         }
     }
 
     // ==========================================
-    // 3. LOGICA DEL BOTÓN HOME (CORREGIDO)
+    // 3. LÓGICA DEL BOTÓN HOME
     // ==========================================
     if (homeBtn) {
         homeBtn.addEventListener("click", () => {
-            // 100ms de retraso para que se aprecie físicamente la animación de hundirse
             setTimeout(() => {
-                window.location.href = "home.html"; // Redirige a tu página principal
+                window.location.href = "home.html";
             }, 100);
         });
     }
@@ -79,13 +77,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // ==========================================
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Evita que se recargue la página
+            e.preventDefault();
             
             const email = emailInput.value.trim();
             const password = passwordInput.value;
             const username = usernameInput.value.trim();
             
-            // Obtener el rol seleccionado desde los radio buttons
             let selectedRole = 'usuario';
             for (const radio of roleRadios) {
                 if (radio.checked) {
@@ -94,22 +91,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
             
-            // Validar que los campos no estén vacíos
             if (!email || !password || !username) {
                 showError('❌ Por favor, completa todos los campos');
                 return;
             }
             
             try {
-                // Intentar iniciar sesión con Firebase Auth
+                // 1. Autenticación con Firebase Auth
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
                 
-                // El rol real viene de Firestore, no del radio seleccionado.
-                // Así nadie puede entrar al panel de admin simplemente marcando "DUEÑO".
+                // 2. Consulta de datos del perfil en Firestore
                 const profileSnap = await getDoc(doc(db, 'users', user.uid));
                 if (!profileSnap.exists()) {
                     showError('❌ Tu perfil de aplicación no existe.');
+                    await auth.signOut();
                     return;
                 }
 
@@ -117,25 +113,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 const actualRole = profile.role || 'usuario';
                 const status = profile.status || 'approved';
 
-                if (actualRole === 'barbero' && status === 'pending') {
-                    showError('⏳ Tu solicitud de barbero todavía está pendiente de aprobación.');
-                    await auth.signOut();
-                    return;
-                }
-                if (actualRole === 'barbero' && status === 'rejected') {
-                    showError('❌ Tu solicitud para ser barbero no fue aprobada.');
-                    await auth.signOut();
-                    return;
-                }
-                if (actualRole !== selectedRole && !(actualRole === 'dueno' && selectedRole === 'dueno')) {
-                    showError('❌ El rol seleccionado no coincide con tu cuenta.');
+                // 3. Validación de rechazo general (Evita el paso de usuarios rechazados por el Admin)
+                if (status === 'rejected') {
+                    showError('❌ Tu solicitud o cuenta ha sido rechazada por el administrador.');
                     await auth.signOut();
                     return;
                 }
 
+                // 4. Validación de solicitud pendiente
+                if (status === 'pending') {
+                    showError('⏳ Tu solicitud todavía está pendiente de aprobación por el administrador.');
+                    await auth.signOut();
+                    return;
+                }
+
+                // 5. Validación de coincidencia de rol
+                if (actualRole !== selectedRole && !(actualRole === 'dueno' && selectedRole === 'dueno')) {
+                    showError('❌ El rol seleccionado no coincide con el registrado en tu cuenta.');
+                    await auth.signOut();
+                    return;
+                }
+
+                // 6. Almacenamiento local y redirección
                 const realUsername = profile.username || user.displayName || username;
                 localStorage.setItem('userRole', actualRole);
                 localStorage.setItem('username', realUsername);
+                
                 alert(`¡Bienvenido de vuelta, ${realUsername}!`);
 
                 if (actualRole === 'barbero') {
@@ -145,14 +148,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     window.location.href = 'dashboard-usuario.html';
                 }
+
             } catch (error) {
                 console.error('Error al iniciar sesión:', error);
                 
-                // Mensajes de error controlados
                 let mensaje = '';
                 switch (error.code) {
                     case 'auth/user-not-found':
-                    case 'auth/invalid-credential': // Firebase v10 a veces unifica este error por seguridad
+                    case 'auth/invalid-credential':
                         mensaje = '❌ Correo o contraseña incorrectos';
                         break;
                     case 'auth/wrong-password':
