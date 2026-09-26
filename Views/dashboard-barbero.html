@@ -1,12 +1,143 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The CraftBarber - Iniciar Sesion</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Barbero - The Craft Barber</title>
+  <link rel="stylesheet" href="/Views/css/style-dbbarbero.css">
 </head>
 <body>
-    Hola, esta es la incompleta pagina de barbero
+
+  <!-- Capa de sombra sobre el fondo -->
+  <div class="background-overlay"></div>
+
+  <!-- Barra Superior Navbar -->
+  <header class="navbar">
+    <div class="user-info" id="user-profile-trigger" title="Ver mi perfil">
+      <div class="avatar" id="navbar-avatar"><span id="navbar-avatar-initial"></span></div>
+      <div class="user-info-text">
+        <span class="user-name" id="user-name-display">CARGANDO...</span>
+        <span class="user-role">BARBERO</span>
+      </div>
+    </div>
+    <nav class="nav-buttons">
+      <a href="/Views/home.html" class="btn-text">INICIO</a>
+    </nav>
+  </header>
+
+  <!-- Contenido Principal -->
+  <main class="dashboard">
+
+    <!-- HERO: bienvenida + resumen -->
+    <section class="hero-banner fade-in">
+      <div class="hero-text">
+        <p class="hero-eyebrow" id="hero-greeting">HOLA</p>
+        <h1 class="hero-title" id="hero-username">BARBERO</h1>
+        <p class="hero-date" id="hero-date"></p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-chip">
+          <span class="stat-value" id="stat-today">0</span>
+          <span class="stat-label">CITAS HOY</span>
+        </div>
+        <div class="stat-chip stat-chip-accent">
+          <span class="stat-value" id="stat-next">—</span>
+          <span class="stat-label">PRÓXIMA CITA</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-value" id="stat-gallery">0/5</span>
+          <span class="stat-label">FOTOS EN GALERÍA</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="dashboard-grid">
+
+      <!-- COLUMNA PRINCIPAL: agenda + galería -->
+      <div class="col-main">
+
+        <!-- Agenda de trabajo -->
+        <section class="card fade-in">
+          <div class="card-header-row">
+            <h2 class="card-title">MI AGENDA DE TRABAJO</h2>
+            <span class="badge-count" id="agenda-count">0</span>
+          </div>
+          <div class="appointments-grid" id="agenda-grid">
+            <p class="empty-message" id="agenda-empty">AÚN NO TIENES CITAS ASIGNADAS</p>
+          </div>
+        </section>
+
+        <!-- Galería de trabajos -->
+        <section class="card fade-in">
+          <div class="card-header-row">
+            <h2 class="card-title">GALERÍA DE TRABAJOS</h2>
+            <span class="badge-count" id="gallery-badge">0/5</span>
+          </div>
+          <p class="card-subtitle">Sube hasta 5 fotos de tus mejores trabajos para mostrarlas a los clientes.</p>
+
+          <div class="gallery-grid" id="gallery-grid"></div>
+
+          <input type="file" id="gallery-input" accept="image/*" multiple hidden>
+          <p class="gallery-hint" id="gallery-hint">Toca un espacio vacío para subir una foto (JPG o PNG).</p>
+        </section>
+
+      </div>
+
+      <!-- COLUMNA LATERAL: notas del jefe -->
+      <aside class="col-side">
+
+        <section class="card fade-in">
+          <div class="card-header-row">
+            <h2 class="card-title">NOTAS DEL JEFE</h2>
+            <span class="badge-count" id="notes-count">0</span>
+          </div>
+          <div class="notes-list" id="notes-list">
+            <p class="empty-message" id="notes-empty">NO TIENES NOTAS NUEVAS</p>
+          </div>
+        </section>
+
+      </aside>
+    </div>
+
+  </main>
+
+  <!-- MODAL DE PERFIL DE BARBERO -->
+  <div class="modal-overlay" id="profile-modal">
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close-btn">&times;</button>
+      <h2 class="modal-title">PERFIL DE BARBERO</h2>
+
+      <div class="profile-avatar-container">
+        <div class="profile-avatar-box" id="modal-avatar"><span id="modal-avatar-initial"></span></div>
+      </div>
+
+      <div class="form-group">
+        <label>NOMBRE DE USUARIO</label>
+        <input type="text" id="modal-username" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>CORREO ELECTRÓNICO</label>
+        <input type="email" id="modal-email" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>CONTRASEÑA</label>
+        <div class="password-wrapper">
+          <input type="password" id="modal-password" value="********" readonly>
+          <button type="button" class="toggle-password" id="toggle-password-btn">👁️</button>
+        </div>
+      </div>
+
+      <button class="btn-primary btn-logout" id="btn-logout">CERRAR SESIÓN</button>
+    </div>
+  </div>
+
+  <!-- PIE DE PÁGINA -->
+  <footer class="footer footer-simple">
+    <p>&copy; 2026 THE CRAFT BARBER. TODOS LOS DERECHOS RESERVADOS.</p>
+  </footer>
+
+  <script type="module" src="/Views/js/script-dbbarbero.js"></script>
 </body>
+</html>
