@@ -3,6 +3,7 @@
 // ==========================================
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 // Tu configuración de Firebase
 const firebaseConfig = {
@@ -18,6 +19,7 @@ const firebaseConfig = {
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 // ==========================================
 // 2. ESPERA A QUE EL HTML ESTÉ CARGADO
@@ -120,11 +122,32 @@ document.addEventListener("DOMContentLoaded", () => {
                     displayName: username
                 });
                 
-                // 3. Almacenamiento local de sesión en el navegador
+                // 3. Crear el perfil de la aplicación en Firestore.
+                // Los usuarios normales quedan activos inmediatamente.
+                // Los barberos quedan PENDIENTES hasta que el admin los apruebe.
+                const profile = {
+                    username,
+                    email,
+                    role: selectedRole,
+                    status: selectedRole === 'barbero' ? 'pending' : 'approved',
+                    createdAt: serverTimestamp()
+                };
+                await setDoc(doc(db, 'users', user.uid), profile);
+
+                if (selectedRole === 'barbero') {
+                    await setDoc(doc(db, 'barberApplications', user.uid), {
+                        username,
+                        email,
+                        status: 'pending',
+                        createdAt: serverTimestamp()
+                    });
+                    showMessage('✅ Solicitud enviada. Un administrador debe aprobar tu cuenta de barbero.', false);
+                } else {
+                    showMessage('✅ ¡Cuenta creada exitosamente! Redirigiendo...', false);
+                }
+
                 localStorage.setItem('userRole', selectedRole);
                 localStorage.setItem('username', username);
-                
-                showMessage('✅ ¡Cuenta creada exitosamente! Redirigiendo...', false);
                 
                 // Redirigir al login después de 2 segundos para dar tiempo a ver el éxito
                 setTimeout(() => {

@@ -696,3 +696,6 @@ body {
   font-size: 11px;
   color: #ffffff;
 }
+
+/* BANDEJA DE PROMOCIONES Y RESEÑAS */
+.promo-inbox{display:flex;flex-direction:column;gap:10px;max-height:300px;overflow:auto}.promo-inbox-item{border:3px solid var(--border-color);background:#eef6ea;padding:12px}.promo-inbox-item strong{display:block;color:var(--primary-green);font-family:var(--font-display);font-size:9px;margin-bottom:6px}.promo-inbox-item p{font-size:12px;color:var(--ink);margin-bottom:6px}.promo-inbox-item small{font-size:10px;color:var(--muted)}.review-form{display:flex;flex-direction:column;gap:9px}.review-form select,.review-form textarea{width:100%;padding:10px;border:3px solid var(--border-color);background:#fff;color:var(--ink);font-family:var(--font-body);font-size:13px}.review-form textarea{min-height:85px;resize:vertical}.review-status{font-size:11px;min-height:17px;margin-top:8px}

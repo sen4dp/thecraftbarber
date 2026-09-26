@@ -3,6 +3,7 @@
 // ==========================================
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 // Tu configuración de Firebase
 const firebaseConfig = {
@@ -18,6 +19,7 @@ const firebaseConfig = {
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 // ==========================================
 // 2. ESPERA A QUE EL HTML ESTÉ CARGADO
@@ -103,21 +105,46 @@ document.addEventListener("DOMContentLoaded", () => {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
                 
-                // Guardar información temporal en el navegador
-                localStorage.setItem('userRole', selectedRole);
-                localStorage.setItem('username', username);
-                
-                alert(`¡Bienvenido de vuelta, ${username}!`);
-
-                // Redirección adaptada a los nombres de tus nuevos dashboards
-                if (selectedRole === 'barbero') {
-                    window.location.href = 'dashboard-barbero.html';
-                } else if (selectedRole === 'dueno') {
-                    window.location.href = 'dashboard-admin.html';
-                } else if (selectedRole === 'usuario') {
-                    window.location.href = 'dashboard-usuario.html'; // Redirige al dashboard de usuario
+                // El rol real viene de Firestore, no del radio seleccionado.
+                // Así nadie puede entrar al panel de admin simplemente marcando "DUEÑO".
+                const profileSnap = await getDoc(doc(db, 'users', user.uid));
+                if (!profileSnap.exists()) {
+                    showError('❌ Tu perfil de aplicación no existe.');
+                    return;
                 }
-                
+
+                const profile = profileSnap.data();
+                const actualRole = profile.role || 'usuario';
+                const status = profile.status || 'approved';
+
+                if (actualRole === 'barbero' && status === 'pending') {
+                    showError('⏳ Tu solicitud de barbero todavía está pendiente de aprobación.');
+                    await auth.signOut();
+                    return;
+                }
+                if (actualRole === 'barbero' && status === 'rejected') {
+                    showError('❌ Tu solicitud para ser barbero no fue aprobada.');
+                    await auth.signOut();
+                    return;
+                }
+                if (actualRole !== selectedRole && !(actualRole === 'dueno' && selectedRole === 'dueno')) {
+                    showError('❌ El rol seleccionado no coincide con tu cuenta.');
+                    await auth.signOut();
+                    return;
+                }
+
+                const realUsername = profile.username || user.displayName || username;
+                localStorage.setItem('userRole', actualRole);
+                localStorage.setItem('username', realUsername);
+                alert(`¡Bienvenido de vuelta, ${realUsername}!`);
+
+                if (actualRole === 'barbero') {
+                    window.location.href = 'dashboard-barbero.html';
+                } else if (actualRole === 'dueno' || actualRole === 'admin') {
+                    window.location.href = 'dashboard-admin.html';
+                } else {
+                    window.location.href = 'dashboard-usuario.html';
+                }
             } catch (error) {
                 console.error('Error al iniciar sesión:', error);
                 

@@ -1,12 +1,105 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The CraftBarber - Iniciar Sesion</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin - The Craft Barber</title>
+  <link rel="stylesheet" href="/Views/css/style-dbadmin.css">
 </head>
 <body>
-    Hola, esta es la incompleta pagina del dueño de la barberia
+  <div class="background-overlay"></div>
+
+  <header class="navbar">
+    <div class="user-info">
+      <div class="avatar"><span id="admin-avatar-initial">A</span></div>
+      <div class="user-info-text">
+        <span class="user-name" id="admin-name">ADMINISTRADOR</span>
+        <span class="user-role">DUEÑO / ADMIN</span>
+      </div>
+    </div>
+    <nav class="nav-buttons">
+      <a href="/Views/home.html" class="btn-text">INICIO</a>
+      <button class="btn-text danger-btn" id="btn-admin-logout">SALIR</button>
+    </nav>
+  </header>
+
+  <main class="dashboard">
+    <section class="hero-banner fade-in">
+      <div class="hero-text">
+        <p class="hero-eyebrow">CENTRO DE CONTROL</p>
+        <h1 class="hero-title">THE CRAFTBARBER</h1>
+        <p class="hero-date" id="admin-date"></p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-chip"><span class="stat-value" id="stat-barbers">0</span><span class="stat-label">BARBEROS</span></div>
+        <div class="stat-chip stat-chip-accent"><span class="stat-value" id="stat-pending">0</span><span class="stat-label">SOLICITUDES</span></div>
+        <div class="stat-chip"><span class="stat-value" id="stat-clients">0</span><span class="stat-label">CLIENTES</span></div>
+      </div>
+    </section>
+
+    <div class="dashboard-grid">
+      <div class="col-main">
+        <section class="card fade-in">
+          <div class="card-header-row"><h2 class="card-title">SOLICITUDES DE BARBEROS</h2><span class="badge-count" id="pending-count">0</span></div>
+          <p class="card-subtitle">Revisa cada registro antes de darle acceso como barbero.</p>
+          <div id="applications-list" class="admin-list"><p class="empty-message">NO HAY SOLICITUDES PENDIENTES</p></div>
+        </section>
+
+        <section class="card fade-in">
+          <div class="card-header-row"><h2 class="card-title">BARBEROS ACTUALES</h2><span class="badge-count" id="barbers-count">0</span></div>
+          <div id="barbers-list" class="admin-list"><p class="empty-message">NO HAY BARBEROS APROBADOS</p></div>
+        </section>
+
+        <section class="card fade-in">
+          <div class="card-header-row"><h2 class="card-title">RESEÑAS ANÓNIMAS</h2><span class="badge-count" id="reviews-count">0</span></div>
+          <div id="reviews-list" class="admin-list"><p class="empty-message">AÚN NO HAY RESEÑAS</p></div>
+        </section>
+      </div>
+
+      <aside class="col-side">
+        <section class="card fade-in">
+          <div class="card-header-row"><h2 class="card-title">CLIENTES FRECUENTES</h2><span class="badge-count" id="clients-count">0</span></div>
+          <div id="clients-list" class="admin-list"><p class="empty-message">CARGANDO CLIENTES...</p></div>
+        </section>
+
+        <section class="card fade-in">
+          <h2 class="card-title">ENVIAR PROMOCIÓN</h2>
+          <p class="card-subtitle">Premia a un cliente desde su perfil.</p>
+          <form id="promo-form" class="admin-form">
+            <select id="promo-client" required><option value="">SELECCIONA UN CLIENTE</option></select>
+            <input id="promo-title" type="text" maxlength="60" placeholder="Título de la promoción" required>
+            <textarea id="promo-message" maxlength="240" placeholder="Mensaje, descuento o beneficio" required></textarea>
+            <button class="btn-primary" type="submit">ENVIAR PROMOCIÓN</button>
+          </form>
+          <p id="promo-message-status" class="form-status"></p>
+        </section>
+
+        <section class="card fade-in">
+          <h2 class="card-title">DEJAR NOTA A BARBERO</h2>
+          <form id="note-form" class="admin-form">
+            <select id="note-barber" required><option value="">SELECCIONA UN BARBERO</option></select>
+            <textarea id="note-text" maxlength="300" placeholder="Escribe una nota para el barbero..." required></textarea>
+            <button class="btn-primary" type="submit">GUARDAR NOTA</button>
+          </form>
+          <p id="note-message-status" class="form-status"></p>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="client-modal">
+    <div class="modal-content">
+      <button class="modal-close" id="client-modal-close">&times;</button>
+      <h2 class="modal-title">PERFIL DEL CLIENTE</h2>
+      <div class="profile-avatar-container"><div class="profile-avatar-box"><span id="client-modal-initial">C</span></div></div>
+      <div class="form-group"><label>NOMBRE</label><input id="client-modal-name" readonly></div>
+      <div class="form-group"><label>CORREO</label><input id="client-modal-email" readonly></div>
+      <div class="client-profile-stats" id="client-modal-stats"></div>
+      <div class="promo-inbox-admin" id="client-modal-promos"></div>
+    </div>
+  </div>
+
+  <footer class="footer"><p>&copy; 2026 THE CRAFT BARBER. TODOS LOS DERECHOS RESERVADOS.</p></footer>
+  <script type="module" src="/Views/js/script-dbadmin.js"></script>
 </body>
+</html>

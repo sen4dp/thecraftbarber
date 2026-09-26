@@ -1,3 +1,15 @@
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, onSnapshot, setDoc, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyDc1Oha-1Es-7vS9jZe5DkXXuI17OYVzKY', authDomain: 'the-craftbarber.firebaseapp.com', projectId: 'the-craftbarber',
+  storageBucket: 'the-craftbarber.firebasestorage.app', messagingSenderId: '1064165237871', appId: '1:1064165237871:web:3aae757a6f5a30bfb3d99a', measurementId: 'G-HCPNHKKS7C'
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
 // ==========================================
 // DASHBOARD DE BARBERO - THE CRAFT BARBER
 // ==========================================
@@ -111,17 +123,70 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${day} ${month}`;
     }
 
-    // Cargar nombre guardado en LocalStorage (mismo patrón que el dashboard de usuario)
-    const cachedUsername = localStorage.getItem('username');
-    if (cachedUsername && userNameElement) {
-        userNameElement.textContent = cachedUsername.toUpperCase();
-    }
+    let currentUser = null;
+    let notesUnsubscribe = null;
+
     if (heroGreeting) heroGreeting.textContent = getGreeting();
     if (heroDate) heroDate.textContent = getHeroDateText();
-    if (cachedUsername) {
-        if (heroUsername) heroUsername.textContent = cachedUsername.toUpperCase();
-        setAvatarInitial(cachedUsername);
+
+    async function loadBarberAppointments(barberId) {
+        try {
+            const ref = collection(db, 'citas');
+            const q = query(ref, where('barberoId', '==', barberId));
+            const snap = await getDocs(q);
+            renderAgenda(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        } catch (error) {
+            console.error('Error cargando agenda:', error);
+            renderAgenda([]);
+        }
     }
+
+    function subscribeNotes(barberId) {
+        if (notesUnsubscribe) notesUnsubscribe();
+        const q = query(collection(db, 'notas'), where('barberoId', '==', barberId));
+        notesUnsubscribe = onSnapshot(q, snap => {
+            const notas = snap.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+            renderNotas(notas);
+        });
+    }
+
+    async function setPresence(user, online) {
+        try {
+            await setDoc(doc(db, 'presence', user.uid), {
+                online,
+                username: user.displayName || user.email?.split('@')[0] || 'BARBERO',
+                lastSeen: serverTimestamp()
+            }, { merge: true });
+        } catch (e) { console.error('Error de presencia:', e); }
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) { window.location.href = 'login.html'; return; }
+        try {
+            const profileSnap = await getDoc(doc(db, 'users', user.uid));
+            const profile = profileSnap.exists() ? profileSnap.data() : {};
+            if (profile.role !== 'barbero' || profile.status !== 'approved') {
+                alert('Tu cuenta de barbero no está aprobada.');
+                await signOut(auth);
+                window.location.href = 'home.html';
+                return;
+            }
+            currentUser = user;
+            const currentName = profile.username || user.displayName || user.email?.split('@')[0] || 'BARBERO';
+            if (userNameElement) userNameElement.textContent = currentName.toUpperCase();
+            if (heroUsername) heroUsername.textContent = currentName.toUpperCase();
+            setAvatarInitial(currentName);
+            if (modalUsername) modalUsername.value = currentName.toUpperCase();
+            if (modalEmail) modalEmail.value = user.email || '';
+            await setPresence(user, true);
+            setInterval(() => setPresence(user, true), 30000);
+            await loadBarberAppointments(user.uid);
+            subscribeNotes(user.uid);
+        } catch (error) {
+            console.error('Error inicializando dashboard:', error);
+            alert('No se pudo cargar tu perfil de barbero.');
+        }
+    });
 
     // ==========================================
     // AGENDA DE TRABAJO
@@ -193,8 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
         agendaGrid.innerHTML = html;
     }
 
-    // Estado inicial vacío. Sustituye este arreglo por los datos reales.
-    renderAgenda([]);
+    // La agenda se carga después de validar la sesión.
 
     // ==========================================
     // GALERÍA DE TRABAJOS (máx. 5 fotos)
@@ -298,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
             html += `
                 <div class="note-item">
                     ${nota.nueva ? '<span class="badge badge-new">NUEVA</span>' : ''}
-                    <span class="note-date">${escapeHtml(nota.fecha || '')}</span>
+                    <span class="note-date">${escapeHtml(nota.fecha || (nota.createdAt?.toDate ? nota.createdAt.toDate().toLocaleDateString('es-CO') : ''))}</span>
                     <p class="note-text">${escapeHtml(nota.texto || '')}</p>
                 </div>
             `;
@@ -306,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
         notesList.innerHTML = html;
     }
 
-    renderNotas([]);
+    // Las notas se cargan en tiempo real después de validar la sesión.
 
     // ==========================================
     // MODAL DE PERFIL
@@ -338,12 +402,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // TODO: conectar con signOut(auth) de Firebase Auth, igual que en el
-    // dashboard de usuario.
     if (btnLogout) {
-        btnLogout.addEventListener('click', () => {
-            localStorage.clear();
-            window.location.href = 'home.html';
+        btnLogout.addEventListener('click', async () => {
+            try {
+                if (currentUser) await setPresence(currentUser, false);
+                await signOut(auth);
+                localStorage.clear();
+                window.location.href = 'home.html';
+            } catch (error) { console.error(error); }
         });
     }
 

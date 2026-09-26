@@ -12,7 +12,9 @@ import {
     collection,
     query,
     where,
-    getDocs
+    getDocs,
+    addDoc,
+    serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 // Configuración de Firebase
@@ -50,6 +52,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const statNext = document.getElementById('stat-next');
     const historyCount = document.getElementById('history-count');
     const nextAppointmentContent = document.getElementById('next-appointment-content');
+    const promoInbox = document.getElementById('promo-inbox');
+    const promoCount = document.getElementById('promo-count');
+    const reviewForm = document.getElementById('review-form');
+    const reviewBarber = document.getElementById('review-barber');
+    const reviewRating = document.getElementById('review-rating');
+    const reviewComment = document.getElementById('review-comment');
+    const reviewStatus = document.getElementById('review-status');
+    let userAppointments = [];
 
     // Elementos del Modal de Perfil
     const profileTrigger = document.getElementById('user-profile-trigger');
@@ -139,6 +149,31 @@ document.addEventListener('DOMContentLoaded', () => {
     if (heroGreeting) heroGreeting.textContent = getGreeting();
     if (heroDate) heroDate.textContent = getHeroDateText();
 
+    async function loadPromotions(userId) {
+        try {
+            const q = query(collection(db, 'promociones'), where('clienteId', '==', userId));
+            const snap = await getDocs(q);
+            const promos = snap.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+            if (promoCount) promoCount.textContent = String(promos.length);
+            if (!promoInbox) return;
+            promoInbox.innerHTML = promos.length ? promos.map(p => `
+                <div class="promo-inbox-item">
+                    <strong>${escapeHtml(p.titulo || 'PROMOCIÓN ESPECIAL')}</strong>
+                    <p>${escapeHtml(p.mensaje || '')}</p>
+                    <small>${p.activa === false ? 'PROMOCIÓN FINALIZADA' : 'BENEFICIO PERSONAL'}</small>
+                </div>`).join('') : '<p class="empty-message">NO TIENES PROMOCIONES NUEVAS</p>';
+        } catch (error) { console.error('Error cargando promociones:', error); }
+    }
+
+    function populateReviewBarbers(citas) {
+        const unique = new Map();
+        citas.filter(c => (c.barberoId || c.barbero) && parseCitaDate(c) && parseCitaDate(c) < new Date()).forEach(c => {
+            const id = c.barberoId || c.barbero;
+            if (!unique.has(id)) unique.set(id, c.barbero || id);
+        });
+        if (reviewBarber) reviewBarber.innerHTML = '<option value="">SELECCIONA UN BARBERO</option>' + [...unique.entries()].map(([id,name]) => `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`).join('');
+    }
+
     // CONTROL DE SESIÓN EN TIEMPO REAL
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -175,7 +210,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 citas.push({ id: doc.id, ...doc.data() });
             });
 
+            userAppointments = citas;
             renderAppointments(citas);
+            populateReviewBarbers(citas);
+            await loadPromotions(userId);
         } catch (error) {
             console.error('Error al consultar citas:', error);
             renderAppointments([]);
@@ -309,6 +347,27 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 window.location.href = 'agenda.html';
             }, 100);
+        });
+    }
+
+    if (reviewForm) {
+        reviewForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = auth.currentUser;
+            const barberId = reviewBarber?.value;
+            const rating = Number(reviewRating?.value);
+            const comment = reviewComment?.value.trim();
+            if (!user || !barberId || !rating || !comment) return;
+            try {
+                await addDoc(collection(db, 'resenas'), { barberId, rating, comment, createdAt: serverTimestamp() });
+                reviewForm.reset();
+                reviewStatus.textContent = 'RESEÑA ENVIADA DE FORMA ANÓNIMA.';
+                reviewStatus.style.color = '#347621';
+            } catch (error) {
+                console.error(error);
+                reviewStatus.textContent = 'NO SE PUDO ENVIAR LA RESEÑA.';
+                reviewStatus.style.color = '#c0392b';
+            }
         });
     }
 

@@ -109,6 +109,26 @@
           </div>
         </section>
 
+        <section class="card fade-in rewards-card">
+          <div class="card-header-row">
+            <h2 class="card-title">MI BANDEJA</h2>
+            <span class="badge-count" id="promo-count">0</span>
+          </div>
+          <div id="promo-inbox" class="promo-inbox"><p class="empty-message">NO TIENES PROMOCIONES NUEVAS</p></div>
+        </section>
+
+        <section class="card fade-in review-card">
+          <h2 class="card-title">DEJA UNA RESEÑA</h2>
+          <p class="agenda-subtitle">Tu reseña será completamente anónima para el barbero.</p>
+          <form id="review-form" class="review-form">
+            <select id="review-barber" required><option value="">SELECCIONA UN BARBERO</option></select>
+            <select id="review-rating" required><option value="">CALIFICACIÓN</option><option value="5">★★★★★</option><option value="4">★★★★☆</option><option value="3">★★★☆☆</option><option value="2">★★☆☆☆</option><option value="1">★☆☆☆☆</option></select>
+            <textarea id="review-comment" maxlength="300" placeholder="¿Qué te pareció el servicio?" required></textarea>
+            <button class="btn-primary" type="submit">ENVIAR RESEÑA ANÓNIMA</button>
+          </form>
+          <p id="review-status" class="review-status"></p>
+        </section>
+
       </aside>
     </div>
 
