@@ -177,6 +177,9 @@ body, html {
     border: 4px solid #000;
     outline: none;
     background-color: #FFFFFF;
+    color: #3b8526; /* Texto verde sobre fondo blanco */
+    caret-color: #3b8526;
+    color-scheme: light;
 }
 
 /* Botón de Acción */
@@ -261,3 +264,13 @@ body, html {
         height: 42px;
     }
 }
+
+.input-group input:-webkit-autofill,
+.input-group input:-webkit-autofill:hover,
+.input-group input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #3b8526;
+    -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset;
+    box-shadow: 0 0 0 1000px #FFFFFF inset;
+    caret-color: #3b8526;
+}
+
