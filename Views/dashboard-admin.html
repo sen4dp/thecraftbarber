@@ -17,7 +17,7 @@
         <span class="user-role">DUEÑO / ADMIN</span>
       </div>
     </div>
-    <nav class="nav-buttons">
+    <nav class="nav-buttons"><a href="/Views/caja.html" class="btn-text">CAJA</a>
       <a href="/Views/home.html" class="btn-text">INICIO</a>
       <button class="btn-text danger-btn" id="btn-admin-logout">SALIR</button>
     </nav>
@@ -82,6 +82,23 @@
             <button class="btn-primary" type="submit">GUARDAR NOTA</button>
           </form>
           <p id="note-message-status" class="form-status"></p>
+        </section>
+
+        <section class="card fade-in">
+          <h2 class="card-title">GESTIÓN DE NOTAS</h2>
+          <p class="card-subtitle">Edita o elimina las notas internas del expediente privado de cada barbero.</p>
+          <div id="notes-admin-list" class="admin-list"><p class="empty-message">CARGANDO NOTAS...</p></div>
+        </section>
+
+        <section class="card fade-in">
+          <h2 class="card-title">PAGO DIGITAL DEL DUEÑO</h2>
+          <form id="owner-payment-form" class="admin-form">
+            <input id="owner-nequi" maxlength="80" placeholder="Nequi: número / llave">
+            <input id="owner-daviplata" maxlength="80" placeholder="Daviplata: número / llave">
+            <input id="owner-breb" maxlength="80" placeholder="Bre-B: llave">
+            <button class="btn-primary" type="submit">GUARDAR MÉTODOS</button>
+          </form>
+          <p id="owner-payment-status" class="form-status"></p>
         </section>
       </aside>
     </div>

@@ -1,426 +1,131 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, onSnapshot, setDoc, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import {
+  auth, db, onAuthStateChanged, signOut, collection, doc, getDoc, getDocs,
+  query, where, onSnapshot, setDoc, updateDoc, deleteDoc, serverTimestamp,
+  escapeHtml, parseAppointmentDate, compressImage, getCurrentProfile, money
+} from './firebase-core.js';
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyDc1Oha-1Es-7vS9jZe5DkXXuI17OYVzKY', authDomain: 'the-craftbarber.firebaseapp.com', projectId: 'the-craftbarber',
-  storageBucket: 'the-craftbarber.firebasestorage.app', messagingSenderId: '1064165237871', appId: '1:1064165237871:web:3aae757a6f5a30bfb3d99a', measurementId: 'G-HCPNHKKS7C'
-};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const $=id=>document.getElementById(id);
+let currentUser=null, currentProfile=null;
+let unsubCitas=null, unsubNotes=null, unsubPortfolio=null;
+let workingAppointmentId=null;
+const MAX_FOTOS=5;
 
-// ==========================================
-// DASHBOARD DE BARBERO - THE CRAFT BARBER
-// ==========================================
-// Este archivo trae la interfaz completa y funcionando con datos de
-// ejemplo/vacíos. Los puntos donde debes conectar Firebase están
-// marcados con "// TODO:". Las funciones renderAgenda(), renderNotas()
-// y el estado de la galería ya están listos para recibir datos reales:
-// solo llama a esas funciones con lo que traigas de Firestore/Storage.
+function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function greeting(){const h=new Date().getHours();return h<12?'BUENOS DÍAS':h<19?'BUENAS TARDES':'BUENAS NOCHES';}
+function formatDate(d){return d?.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'})||'';}
+function setInitial(name){const x=(name||'?').trim().charAt(0).toUpperCase();$('navbar-avatar-initial').textContent=x;$('modal-avatar-initial').textContent=x;}
+function statusLabel(s){return ({reservada:'RESERVADA',trabajando:'TRABAJANDO',recibida:'RECIBIDA',finalizada:'FINALIZADA',cancelada:'CANCELADA'})[s]||String(s||'').toUpperCase();}
 
-document.addEventListener('DOMContentLoaded', () => {
+async function setPresence(extra={}){
+  await setDoc(doc(db,'presence',currentUser.uid),{online:true,username:currentProfile.username||currentUser.email?.split('@')[0]||'BARBERO',lastSeen:serverTimestamp(),...extra},{merge:true});
+}
+async function stopPresence(){await setDoc(doc(db,'presence',currentUser.uid),{online:false,working:false,lastSeen:serverTimestamp()},{merge:true});}
 
-    // ------------------------------------------
-    // Elementos de la interfaz
-    // ------------------------------------------
-    const userNameElement = document.getElementById('user-name-display');
-    const heroGreeting = document.getElementById('hero-greeting');
-    const heroUsername = document.getElementById('hero-username');
-    const heroDate = document.getElementById('hero-date');
+function renderAgenda(citas){
+  citas.sort((a,b)=>(parseAppointmentDate(a)?.getTime()||Infinity)-(parseAppointmentDate(b)?.getTime()||Infinity));
+  const today=citas.filter(c=>c.fecha===todayKey() && c.estado!=='cancelada');
+  const next=citas.find(c=>parseAppointmentDate(c)>=new Date() && c.estado!=='cancelada');
+  $('agenda-count').textContent=citas.filter(c=>c.estado!=='cancelada').length;
+  $('stat-today').textContent=today.length;
+  $('stat-next').textContent=next?.hora||'—';
+  if(!citas.length){$('agenda-grid').innerHTML='<p class="empty-message">AÚN NO TIENES CITAS ASIGNADAS</p>';return;}
+  $('agenda-grid').innerHTML=citas.map(c=>`<div class="appointment-item ${c.estado==='trabajando'?'working':''}">
+    <span class="badge">${statusLabel(c.estado)}</span>
+    <div class="appointment-row"><span class="appointment-label">FECHA</span><span class="appointment-value">${escapeHtml(c.fecha)}</span></div>
+    <div class="appointment-row"><span class="appointment-label">HORA</span><span class="appointment-value">${escapeHtml(c.hora)}</span></div>
+    <div class="appointment-row"><span class="appointment-label">CLIENTE</span><span class="appointment-value">${escapeHtml(c.cliente||'CLIENTE')}</span></div>
+    <div class="appointment-row"><span class="appointment-label">SERVICIO</span><span class="appointment-value">${escapeHtml(c.servicio||'CORTE')}</span></div>
+    <div class="appointment-row"><span class="appointment-label">TOTAL</span><span class="appointment-value">${money(c.total)}</span></div>
+    <div class="barber-appointment-actions">
+      ${c.estado==='reservada'?`<button class="mini-btn" data-work="${c.id}">EMPEZAR SERVICIO</button>`:''}
+      ${c.estado==='trabajando'?`<button class="mini-btn" data-finish="${c.id}">FINALIZAR / RECIBIR</button>`:''}
+      ${['reservada','trabajando'].includes(c.estado)?`<button class="mini-btn reject" data-cancel="${c.id}">CLIENTE NO LLEGÓ</button>`:''}
+    </div>
+  </div>`).join('');
+}
 
-    const statToday = document.getElementById('stat-today');
-    const statNext = document.getElementById('stat-next');
-    const statGallery = document.getElementById('stat-gallery');
+function subscribeAppointments(){
+  if(unsubCitas)unsubCitas();
+  const q=query(collection(db,'citas'),where('barberoId','==',currentUser.uid));
+  unsubCitas=onSnapshot(q,snap=>{
+    const citas=snap.docs.map(d=>({id:d.id,...d.data()}));
+    workingAppointmentId=citas.find(c=>c.estado==='trabajando')?.id||null;
+    setPresence({working:!!workingAppointmentId,workingCitaId:workingAppointmentId||null});
+    renderAgenda(citas);
+  });
+}
 
-    const agendaGrid = document.getElementById('agenda-grid');
-    const agendaCount = document.getElementById('agenda-count');
+async function updateAppointment(id,status){
+  const ref=doc(db,'citas',id);
+  const snap=await getDoc(ref);if(!snap.exists())return;
+  const cita=snap.data();
+  const data={estado:status,updatedAt:serverTimestamp()};
+  if(status==='trabajando'){data.startedAt=serverTimestamp();await setPresence({working:true,workingCitaId:id});}
+  if(status==='finalizada'||status==='recibida'){data.finishedAt=serverTimestamp();await setPresence({working:false,workingCitaId:null});}
+  if(status==='cancelada'){data.cancelledAt=serverTimestamp();await setPresence({working:false,workingCitaId:null});}
+  await updateDoc(ref,data);
+}
 
-    const galleryGrid = document.getElementById('gallery-grid');
-    const galleryInput = document.getElementById('gallery-input');
-    const galleryBadge = document.getElementById('gallery-badge');
-    const galleryHint = document.getElementById('gallery-hint');
+$('agenda-grid').addEventListener('click',async e=>{
+  const w=e.target.closest('[data-work]'), f=e.target.closest('[data-finish]'), c=e.target.closest('[data-cancel]');
+  try{if(w)await updateAppointment(w.dataset.work,'trabajando');if(f)await updateAppointment(f.dataset.finish,'finalizada');if(c)await updateAppointment(c.dataset.cancel,'cancelada');}catch(err){console.error(err);alert('No se pudo actualizar la cita.');}
+});
 
-    const notesList = document.getElementById('notes-list');
-    const notesCount = document.getElementById('notes-count');
+async function loadPortfolio(){
+  if(unsubPortfolio)unsubPortfolio();
+  const q=query(collection(db,'barberPortfolio'),where('barberId','==',currentUser.uid));
+  unsubPortfolio=onSnapshot(q,snap=>{
+    const fotos=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.position||0)-(b.position||0));
+    renderGallery(fotos);
+  });
+}
+function renderGallery(fotos){
+  $('gallery-badge').textContent=`${fotos.length}/${MAX_FOTOS}`;$('stat-gallery').textContent=`${fotos.length}/${MAX_FOTOS}`;
+  $('gallery-grid').innerHTML=[...fotos.map((f,i)=>`<div class="gallery-slot"><img src="${f.dataUrl}" alt="Trabajo ${i+1}"><button class="gallery-remove" data-delete-photo="${f.id}">&times;</button></div>`),...Array(Math.max(0,MAX_FOTOS-fotos.length)).fill(0).map(()=>'<div class="gallery-slot gallery-slot-empty" data-add-slot><span class="plus-icon">+</span></div>')].join('');
+  $('gallery-hint').textContent=fotos.length>=MAX_FOTOS?'Máximo de 5 fotos alcanzado.':'Toca un espacio vacío para subir una foto JPG/PNG.';
+}
+$('gallery-grid').addEventListener('click',e=>{if(e.target.closest('[data-add-slot]') && $('gallery-input'))$('gallery-input').click();});
+$('gallery-grid').addEventListener('click',async e=>{const b=e.target.closest('[data-delete-photo]');if(!b)return;try{await deleteDoc(doc(db,'barberPortfolio',b.dataset.deletePhoto));}catch(err){alert('No se pudo eliminar la foto.');}});
+$('gallery-input').addEventListener('change',async e=>{
+  const files=[...e.target.files].slice(0,MAX_FOTOS);e.target.value='';
+  const snap=await getDocs(query(collection(db,'barberPortfolio'),where('barberId','==',currentUser.uid)));
+  const existing=snap.size;
+  if(existing>=MAX_FOTOS){alert('Ya tienes 5 fotos.');return;}
+  for(const file of files.slice(0,MAX_FOTOS-existing)){
+    try{const dataUrl=await compressImage(file);await setDoc(doc(collection(db,'barberPortfolio')),{barberId:currentUser.uid,dataUrl,position:existing,createdAt:serverTimestamp()});}catch(err){console.error(err);alert(err.message);}
+  }
+});
 
-    // Modal de perfil
-    const profileTrigger = document.getElementById('user-profile-trigger');
-    const profileModal = document.getElementById('profile-modal');
-    const modalCloseBtn = document.getElementById('modal-close-btn');
-    const modalUsername = document.getElementById('modal-username');
-    const modalEmail = document.getElementById('modal-email');
-    const modalPassword = document.getElementById('modal-password');
-    const togglePasswordBtn = document.getElementById('toggle-password-btn');
-    const btnLogout = document.getElementById('btn-logout');
-    const navbarAvatarInitial = document.getElementById('navbar-avatar-initial');
-    const modalAvatarInitial = document.getElementById('modal-avatar-initial');
+function renderNotes(items){
+  $('notes-count').textContent=items.length;
+  $('notes-list').innerHTML=items.length?items.map(n=>`<div class="note-item"><span class="note-date">${formatDate(n.createdAt?.toDate?.()||new Date())}</span><p class="note-text">${escapeHtml(n.texto)}</p></div>`).join(''):'<p class="empty-message">NO TIENES NOTAS NUEVAS</p>';
+}
+function subscribeNotes(){
+  if(unsubNotes)unsubNotes();
+  const q=query(collection(db,'notas'),where('barberoId','==',currentUser.uid));
+  unsubNotes=onSnapshot(q,s=>renderNotes(s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0))));
+}
 
-    const MAX_FOTOS = 5;
+async function savePayments(){
+  await setDoc(doc(db,'metodosPago',currentUser.uid),{nequi:$('pay-nequi').value.trim(),daviplata:$('pay-daviplata').value.trim(),breb:$('pay-breb').value.trim(),updatedAt:serverTimestamp()},{merge:true});
+  $('payment-status').textContent='MÉTODOS DE PAGO GUARDADOS.';
+}
+async function loadPayments(){const s=await getDoc(doc(db,'metodosPago',currentUser.uid));if(!s.exists())return;const p=s.data();$('pay-nequi').value=p.nequi||'';$('pay-daviplata').value=p.daviplata||'';$('pay-breb').value=p.breb||'';}
+$('payment-form').addEventListener('submit',e=>{e.preventDefault();savePayments().catch(err=>{console.error(err);$('payment-status').textContent='NO SE PUDO GUARDAR.';});});
 
-    // ------------------------------------------
-    // Helpers de presentación
-    // ------------------------------------------
-    function getGreeting() {
-        const h = new Date().getHours();
-        if (h < 12) return 'BUENOS DÍAS';
-        if (h < 19) return 'BUENAS TARDES';
-        return 'BUENAS NOCHES';
-    }
+$('user-profile-trigger').addEventListener('click',()=>{$('profile-modal').style.display='flex';});
+$('modal-close-btn').addEventListener('click',()=>{$('profile-modal').style.display='none';});
+$('btn-logout').addEventListener('click',async()=>{await stopPresence();await signOut(auth);location.href='home.html';});
 
-    function getHeroDateText() {
-        return new Date().toLocaleDateString('es-ES', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long'
-        }).toUpperCase();
-    }
-
-    function setAvatarInitial(name) {
-        const initial = name ? name.trim().charAt(0).toUpperCase() : '?';
-        if (navbarAvatarInitial) navbarAvatarInitial.textContent = initial;
-        if (modalAvatarInitial) modalAvatarInitial.textContent = initial;
-    }
-
-    function escapeHtml(value) {
-        return String(value ?? '').replace(/[&<>"']/g, (c) => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-        }[c]));
-    }
-
-    function isSameDay(a, b) {
-        return a.getFullYear() === b.getFullYear() &&
-            a.getMonth() === b.getMonth() &&
-            a.getDate() === b.getDate();
-    }
-
-    // Intenta interpretar fecha/hora guardadas como "YYYY-MM-DD" o "DD/MM/YYYY"
-    function parseCitaDate(cita) {
-        if (!cita || !cita.fecha) return null;
-        const fechaStr = String(cita.fecha).trim();
-        const horaStr = String(cita.hora || '00:00').trim();
-
-        let d = new Date(`${fechaStr}T${horaStr}`);
-        if (!isNaN(d.getTime())) return d;
-
-        const match = fechaStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-        if (match) {
-            const [, dd, mm, yyyy] = match;
-            const [hh, min] = horaStr.split(':').map(Number);
-            d = new Date(Number(yyyy), Number(mm) - 1, Number(dd), hh || 0, min || 0);
-            if (!isNaN(d.getTime())) return d;
-        }
-        return null;
-    }
-
-    function formatShortDate(d) {
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = d.toLocaleDateString('es-ES', { month: 'short' }).toUpperCase().replace('.', '');
-        return `${day} ${month}`;
-    }
-
-    let currentUser = null;
-    let notesUnsubscribe = null;
-
-    if (heroGreeting) heroGreeting.textContent = getGreeting();
-    if (heroDate) heroDate.textContent = getHeroDateText();
-
-    async function loadBarberAppointments(barberId) {
-        try {
-            const ref = collection(db, 'citas');
-            const q = query(ref, where('barberoId', '==', barberId));
-            const snap = await getDocs(q);
-            renderAgenda(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        } catch (error) {
-            console.error('Error cargando agenda:', error);
-            renderAgenda([]);
-        }
-    }
-
-    function subscribeNotes(barberId) {
-        if (notesUnsubscribe) notesUnsubscribe();
-        const q = query(collection(db, 'notas'), where('barberoId', '==', barberId));
-        notesUnsubscribe = onSnapshot(q, snap => {
-            const notas = snap.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-            renderNotas(notas);
-        });
-    }
-
-    async function setPresence(user, online) {
-        try {
-            await setDoc(doc(db, 'presence', user.uid), {
-                online,
-                username: user.displayName || user.email?.split('@')[0] || 'BARBERO',
-                lastSeen: serverTimestamp()
-            }, { merge: true });
-        } catch (e) { console.error('Error de presencia:', e); }
-    }
-
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) { window.location.href = 'login.html'; return; }
-        try {
-            const profileSnap = await getDoc(doc(db, 'users', user.uid));
-            const profile = profileSnap.exists() ? profileSnap.data() : {};
-            if (profile.role !== 'barbero' || profile.status !== 'approved') {
-                alert('Tu cuenta de barbero no está aprobada.');
-                await signOut(auth);
-                window.location.href = 'home.html';
-                return;
-            }
-            currentUser = user;
-            const currentName = profile.username || user.displayName || user.email?.split('@')[0] || 'BARBERO';
-            if (userNameElement) userNameElement.textContent = currentName.toUpperCase();
-            if (heroUsername) heroUsername.textContent = currentName.toUpperCase();
-            setAvatarInitial(currentName);
-            if (modalUsername) modalUsername.value = currentName.toUpperCase();
-            if (modalEmail) modalEmail.value = user.email || '';
-            await setPresence(user, true);
-            setInterval(() => setPresence(user, true), 30000);
-            await loadBarberAppointments(user.uid);
-            subscribeNotes(user.uid);
-        } catch (error) {
-            console.error('Error inicializando dashboard:', error);
-            alert('No se pudo cargar tu perfil de barbero.');
-        }
-    });
-
-    // ==========================================
-    // AGENDA DE TRABAJO
-    // ==========================================
-    // TODO: reemplazar por tu propia carga desde Firestore, por ejemplo:
-    // const citasRef = collection(db, 'citas');
-    // const q = query(citasRef, where('barberoId', '==', barberoId));
-    // const snapshot = await getDocs(q);
-    // const citas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    // renderAgenda(citas);
-    function renderAgenda(citas) {
-        const withDates = citas.map((cita) => ({ ...cita, _date: parseCitaDate(cita) }));
-        withDates.sort((a, b) => {
-            if (a._date && b._date) return a._date - b._date;
-            if (a._date) return -1;
-            if (b._date) return 1;
-            return 0;
-        });
-
-        const now = new Date();
-        const total = withDates.length;
-        const todayCount = withDates.filter((c) => c._date && isSameDay(c._date, now)).length;
-        const next = withDates.find((c) => c._date && c._date >= now) || null;
-
-        if (agendaCount) agendaCount.textContent = String(total);
-        if (statToday) statToday.textContent = String(todayCount);
-        if (statNext) statNext.textContent = next ? formatShortDate(next._date) : '—';
-
-        if (total === 0) {
-            agendaGrid.innerHTML = `<p class="empty-message" id="agenda-empty">AÚN NO TIENES CITAS ASIGNADAS</p>`;
-            return;
-        }
-
-        let html = '';
-        withDates.forEach((cita) => {
-            const isToday = cita._date ? isSameDay(cita._date, now) : false;
-            const isPast = cita._date ? cita._date < now && !isToday : false;
-            const isNext = next && cita === next;
-
-            let badge = '';
-            if (isToday) badge = '<span class="badge badge-today">HOY</span>';
-            else if (isNext) badge = '<span class="badge badge-next">PRÓXIMA</span>';
-            else if (isPast) badge = '<span class="badge badge-past">COMPLETADA</span>';
-
-            html += `
-                <div class="appointment-item ${isPast ? 'is-past' : ''}">
-                    ${badge}
-                    <div class="appointment-row">
-                        <span class="appointment-label">FECHA</span>
-                        <span class="appointment-value">${escapeHtml(cita.fecha || 'N/A')}</span>
-                    </div>
-                    <div class="appointment-row">
-                        <span class="appointment-label">HORA</span>
-                        <span class="appointment-value">${escapeHtml(cita.hora || 'N/A')}</span>
-                    </div>
-                    ${cita.cliente ? `
-                    <div class="appointment-row">
-                        <span class="appointment-label">CLIENTE</span>
-                        <span class="appointment-value">${escapeHtml(cita.cliente)}</span>
-                    </div>` : ''}
-                    ${cita.servicio ? `
-                    <div class="appointment-row">
-                        <span class="appointment-label">SERVICIO</span>
-                        <span class="appointment-value">${escapeHtml(cita.servicio)}</span>
-                    </div>` : ''}
-                </div>
-            `;
-        });
-        agendaGrid.innerHTML = html;
-    }
-
-    // La agenda se carga después de validar la sesión.
-
-    // ==========================================
-    // GALERÍA DE TRABAJOS (máx. 5 fotos)
-    // ==========================================
-    // Estado local de la galería: cada elemento es { file, url } mientras
-    // no esté conectada a Storage, o { url, path } cuando ya vengan de
-    // Firebase (en ese caso "file" no es necesario).
-    // TODO: al conectar Firebase, carga las fotos existentes del barbero
-    // en este arreglo (ej. desde un campo "fotos" del documento del barbero)
-    // y llama a renderGallery() una vez cargadas.
-    let fotos = [];
-
-    function renderGallery() {
-        let html = '';
-
-        fotos.forEach((foto, index) => {
-            html += `
-                <div class="gallery-slot">
-                    <img src="${foto.url}" alt="Foto de trabajo ${index + 1}">
-                    <button type="button" class="gallery-remove" data-index="${index}" title="Eliminar foto">&times;</button>
-                </div>
-            `;
-        });
-
-        const espaciosLibres = MAX_FOTOS - fotos.length;
-        for (let i = 0; i < espaciosLibres; i++) {
-            html += `
-                <div class="gallery-slot gallery-slot-empty" data-add-slot>
-                    <span class="plus-icon">+</span>
-                </div>
-            `;
-        }
-
-        galleryGrid.innerHTML = html;
-
-        if (galleryBadge) galleryBadge.textContent = `${fotos.length}/${MAX_FOTOS}`;
-        if (statGallery) statGallery.textContent = `${fotos.length}/${MAX_FOTOS}`;
-
-        if (galleryHint) {
-            galleryHint.textContent = fotos.length >= MAX_FOTOS
-                ? 'Alcanzaste el máximo de 5 fotos. Elimina una para subir otra.'
-                : 'Toca un espacio vacío para subir una foto (JPG o PNG).';
-        }
-
-        // Abrir el selector de archivos al tocar un espacio vacío
-        galleryGrid.querySelectorAll('[data-add-slot]').forEach((slot) => {
-            slot.addEventListener('click', () => {
-                if (fotos.length >= MAX_FOTOS) return;
-                galleryInput.click();
-            });
-        });
-
-        // Quitar una foto
-        galleryGrid.querySelectorAll('.gallery-remove').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const index = Number(btn.dataset.index);
-                // TODO: si la foto ya está en Firebase Storage, borra también
-                // el archivo remoto (deleteObject) usando fotos[index].path
-                fotos.splice(index, 1);
-                renderGallery();
-            });
-        });
-    }
-
-    if (galleryInput) {
-        galleryInput.addEventListener('change', (e) => {
-            const archivos = Array.from(e.target.files || []);
-            const espaciosLibres = MAX_FOTOS - fotos.length;
-
-            archivos.slice(0, espaciosLibres).forEach((file) => {
-                const url = URL.createObjectURL(file);
-                fotos.push({ file, url });
-                // TODO: subir "file" a Firebase Storage aquí y, cuando tengas
-                // la URL definitiva, reemplázala en este mismo objeto.
-            });
-
-            renderGallery();
-            galleryInput.value = '';
-        });
-    }
-
-    renderGallery();
-
-    // ==========================================
-    // NOTAS DEL JEFE
-    // ==========================================
-    // TODO: reemplazar por tu carga desde Firestore, por ejemplo una
-    // colección "notas" filtrada por barberoId, ordenada por fecha.
-    // Cada nota puede tener { fecha, texto, nueva }.
-    function renderNotas(notas) {
-        if (notesCount) notesCount.textContent = String(notas.length);
-
-        if (notas.length === 0) {
-            notesList.innerHTML = `<p class="empty-message" id="notes-empty">NO TIENES NOTAS NUEVAS</p>`;
-            return;
-        }
-
-        let html = '';
-        notas.forEach((nota) => {
-            html += `
-                <div class="note-item">
-                    ${nota.nueva ? '<span class="badge badge-new">NUEVA</span>' : ''}
-                    <span class="note-date">${escapeHtml(nota.fecha || (nota.createdAt?.toDate ? nota.createdAt.toDate().toLocaleDateString('es-CO') : ''))}</span>
-                    <p class="note-text">${escapeHtml(nota.texto || '')}</p>
-                </div>
-            `;
-        });
-        notesList.innerHTML = html;
-    }
-
-    // Las notas se cargan en tiempo real después de validar la sesión.
-
-    // ==========================================
-    // MODAL DE PERFIL
-    // ==========================================
-    if (profileTrigger && profileModal) {
-        profileTrigger.addEventListener('click', () => {
-            profileModal.style.display = 'flex';
-        });
-    }
-
-    if (modalCloseBtn && profileModal) {
-        modalCloseBtn.addEventListener('click', () => {
-            profileModal.style.display = 'none';
-        });
-    }
-
-    window.addEventListener('click', (e) => {
-        if (e.target === profileModal) {
-            profileModal.style.display = 'none';
-        }
-    });
-
-    if (togglePasswordBtn && modalPassword) {
-        let isVisible = false;
-        togglePasswordBtn.addEventListener('click', () => {
-            isVisible = !isVisible;
-            modalPassword.type = isVisible ? 'text' : 'password';
-            togglePasswordBtn.textContent = isVisible ? '🙈' : '👁️';
-        });
-    }
-
-    if (btnLogout) {
-        btnLogout.addEventListener('click', async () => {
-            try {
-                if (currentUser) await setPresence(currentUser, false);
-                await signOut(auth);
-                localStorage.clear();
-                window.location.href = 'home.html';
-            } catch (error) { console.error(error); }
-        });
-    }
-
-    // ==========================================
-    // TODO: CONEXIÓN CON FIREBASE (a cargo del usuario)
-    // ==========================================
-    // Aquí es donde normalmente irían:
-    //   1. La inicialización de Firebase (initializeApp, getAuth, getFirestore, getStorage)
-    //   2. onAuthStateChanged para llenar userNameElement, heroUsername,
-    //      modalUsername, modalEmail y setAvatarInitial(nombre)
-    //   3. La carga real de citas -> renderAgenda(citas)
-    //   4. La carga real de notas -> renderNotas(notas)
-    //   5. La carga de fotos ya guardadas en Storage -> fotos = [...]; renderGallery();
+onAuthStateChanged(auth,async user=>{
+  if(!user)return location.href='login.html';
+  try{
+    currentUser=user;currentProfile=await getCurrentProfile(user);
+    if(!currentProfile || currentProfile.role!=='barbero' || currentProfile.status!=='approved'){alert('Tu cuenta de barbero no está aprobada.');return signOut(auth);}
+    const name=currentProfile.username||user.displayName||user.email?.split('@')[0]||'BARBERO';
+    $('user-name-display').textContent=name.toUpperCase();$('hero-username').textContent=name.toUpperCase();$('hero-greeting').textContent=greeting();$('hero-date').textContent=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'}).toUpperCase();$('modal-username').value=name.toUpperCase();$('modal-email').value=user.email||'';setInitial(name);
+    await setPresence({working:false,workingCitaId:null});
+    setInterval(()=>setPresence({working:!!workingAppointmentId,workingCitaId:workingAppointmentId||null}),30000);
+    await loadPortfolio();subscribeAppointments();subscribeNotes();await loadPayments();
+  }catch(err){console.error(err);alert('No se pudo cargar tu dashboard.');}
 });

@@ -114,6 +114,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const status = profile.status || 'approved';
 
                 // 3. Validación de rechazo general (Evita el paso de usuarios rechazados por el Admin)
+                if (status === 'deleted') {
+                    showError('❌ Esta cuenta fue desactivada por el administrador.');
+                    await auth.signOut();
+                    return;
+                }
+
                 if (status === 'rejected') {
                     showError('❌ Tu solicitud o cuenta ha sido rechazada por el administrador.');
                     await auth.signOut();

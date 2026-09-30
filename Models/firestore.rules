@@ -1,8 +1,122 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    function signedIn() { return request.auth != null; }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function owner() { return signedIn() && (me().role == 'dueno' || me().role == 'admin'); }
+    function barber() { return signedIn() && me().role == 'barbero' && me().status == 'approved'; }
+    function activeBarber(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role == 'barbero'
+        && get(/databases/$(database)/documents/users/$(uid)).data.status == 'approved';
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (uid == request.auth.uid || owner());
+      allow create: if signedIn() && uid == request.auth.uid
+        && request.resource.data.role in ['usuario','barbero']
+        && request.resource.data.status in ['approved','pending'];
+      allow update: if owner()
+        || (signedIn() && uid == request.auth.uid
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.status == resource.data.status);
+      allow delete: if owner();
+    }
+
+    match /barberApplications/{uid} {
+      allow read: if owner() || (signedIn() && uid == request.auth.uid);
+      allow create: if signedIn() && uid == request.auth.uid;
+      allow update, delete: if owner();
+    }
+
+    match /resenas/{id} {
+      // Solo el Dueño lee el feedback. El documento no guarda identidad del cliente.
+      allow read: if owner();
+      allow create: if signedIn()
+        && request.resource.data.barberId is string
+        && activeBarber(request.resource.data.barberId)
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() <= 300;
+      allow update, delete: if owner();
+    }
+
+    match /notas/{id} {
+      allow read: if owner() || (barber() && resource.data.barberoId == request.auth.uid);
+      allow create: if owner()
+        && request.resource.data.creadoPor == request.auth.uid;
+      allow update, delete: if owner();
+    }
+
+    match /promociones/{id} {
+      allow read: if owner() || (signedIn() && resource.data.clienteId == request.auth.uid);
+      allow create: if owner() && request.resource.data.creadoPor == request.auth.uid;
+      allow update, delete: if owner();
+    }
+
+    match /presence/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && (uid == request.auth.uid || owner());
+      allow delete: if signedIn() && (uid == request.auth.uid || owner());
+    }
+
+    match /barberPortfolio/{id} {
+      allow read: if signedIn();
+      allow create: if barber() && request.resource.data.barberId == request.auth.uid;
+      allow update, delete: if barber() && resource.data.barberId == request.auth.uid;
+    }
+
+    match /citas/{id} {
+      allow read: if owner() || (signedIn() && (
+        resource.data.userId == request.auth.uid || resource.data.barberoId == request.auth.uid));
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && activeBarber(request.resource.data.barberoId)
+        && request.resource.data.estado == 'reservada';
+      allow update: if owner()
+        || (barber() && resource.data.barberoId == request.auth.uid
+          && request.resource.data.barberoId == resource.data.barberoId
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','startedAt','finishedAt','cancelledAt','updatedAt','estadoPago','paidAt']))
+        || (signedIn() && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.barberoId == resource.data.barberoId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','updatedAt'])
+          && resource.data.estado == 'reservada'
+          && request.resource.data.estado == 'cancelada');
+      allow delete: if owner();
+    }
+
+    match /metodosPago/{uid} {
+      allow read, write: if signedIn() && (uid == request.auth.uid || owner());
+    }
+
+    match /radicados/{code} {
+      allow read: if owner() || barber();
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid
+        && request.resource.data.estado == 'activo';
+      // Solo Caja puede quemar un radicado; se exige transacción atómica con la cita y el pago.
+      allow update: if (owner() || barber())
+        && resource.data.estado == 'activo'
+        && request.resource.data.estado == 'usado'
+        && request.resource.data.citaId == resource.data.citaId
+        && getAfter(/databases/$(database)/documents/transacciones/$(request.resource.data.citaId)).data.estado == 'Pago realizado con éxito'
+        && getAfter(/databases/$(database)/documents/citas/$(resource.data.citaId)).data.estado in ['recibida','finalizada'];
+      allow delete: if false;
+    }
+
+    match /transacciones/{id} {
+      allow read: if owner() || barber();
+      allow create: if (owner() || barber())
+        && request.resource.data.estado == 'Pago realizado con éxito'
+        && request.resource.data.citaId is string
+        && getAfter(/databases/$(database)/documents/radicados/$(request.resource.data.radicado)).data.estado == 'usado'
+        && getAfter(/databases/$(database)/documents/citas/$(request.resource.data.citaId)).data.estado in ['recibida','finalizada'];
+      allow update: if (owner() || barber())
+        && resource.data.citaId == request.resource.data.citaId
+        && request.resource.data.estado == 'Pago realizado con éxito';
+      allow delete: if false;
     }
   }
 }
