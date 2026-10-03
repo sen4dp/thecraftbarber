@@ -10,6 +10,27 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(uid)).data.status == 'approved';
     }
 
+    // Precios fijos de los servicios (deben coincidir con SERVICES en firebase-core.js).
+    function priceFor(s) {
+      return s == 'General' ? 18000
+        : s == 'Barbería' ? 10000
+        : s == 'General + Diseño' ? 20000
+        : s == 'General + Barbería' ? 28000
+        : s == 'General + Diseño + Barbería' ? 30000
+        : -1;
+    }
+    function discountDoc(code) { return get(/databases/$(database)/documents/descuentos/$(code)).data; }
+    function citaPriceOk(d) {
+      return d.subtotal is int && d.total is int
+        && d.subtotal == priceFor(d.servicio)
+        && (!('descuentoCodigo' in d)
+          ? d.total == d.subtotal
+          : (discountDoc(d.descuentoCodigo).clienteId == request.auth.uid
+            && discountDoc(d.descuentoCodigo).estado == 'activo'
+            && discountDoc(d.descuentoCodigo).porcentaje == d.descuentoPct
+            && d.total * 100 == d.subtotal * (100 - d.descuentoPct)));
+    }
+
     match /users/{uid} {
       allow read: if signedIn() && (uid == request.auth.uid || owner());
       allow create: if signedIn() && uid == request.auth.uid
@@ -61,19 +82,14 @@ service cloud.firestore {
       allow delete: if signedIn() && (uid == request.auth.uid || owner());
     }
 
-    match /barberPortfolio/{id} {
-      allow read: if signedIn();
-      allow create: if barber() && request.resource.data.barberId == request.auth.uid;
-      allow update, delete: if barber() && resource.data.barberId == request.auth.uid;
-    }
-
     match /citas/{id} {
       allow read: if owner() || (signedIn() && (
         resource.data.userId == request.auth.uid || resource.data.barberoId == request.auth.uid));
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
         && activeBarber(request.resource.data.barberoId)
-        && request.resource.data.estado == 'reservada';
+        && request.resource.data.estado == 'reservada'
+        && citaPriceOk(request.resource.data);
       allow update: if owner()
         || (barber() && resource.data.barberoId == request.auth.uid
           && request.resource.data.barberoId == resource.data.barberoId
@@ -93,11 +109,12 @@ service cloud.firestore {
     }
 
     match /radicados/{code} {
-      allow read: if owner() || barber();
+      // El barbero solo ve y cobra los radicados de SUS citas; el dueño, todos.
+      allow read: if owner() || (barber() && resource.data.barberoId == request.auth.uid);
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid
         && request.resource.data.estado == 'activo';
       // Solo Caja puede quemar un radicado; se exige transacción atómica con la cita y el pago.
-      allow update: if (owner() || barber())
+      allow update: if (owner() || (barber() && resource.data.barberoId == request.auth.uid))
         && resource.data.estado == 'activo'
         && request.resource.data.estado == 'usado'
         && request.resource.data.citaId == resource.data.citaId
@@ -108,15 +125,49 @@ service cloud.firestore {
 
     match /transacciones/{id} {
       allow read: if owner() || barber();
-      allow create: if (owner() || barber())
+      allow create: if (owner() || (barber()
+          && getAfter(/databases/$(database)/documents/citas/$(request.resource.data.citaId)).data.barberoId == request.auth.uid))
         && request.resource.data.estado == 'Pago realizado con éxito'
         && request.resource.data.citaId is string
         && getAfter(/databases/$(database)/documents/radicados/$(request.resource.data.radicado)).data.estado == 'usado'
         && getAfter(/databases/$(database)/documents/citas/$(request.resource.data.citaId)).data.estado in ['recibida','finalizada'];
-      allow update: if (owner() || barber())
+      allow update: if (owner() || (barber()
+          && get(/databases/$(database)/documents/citas/$(resource.data.citaId)).data.barberoId == request.auth.uid))
         && resource.data.citaId == request.resource.data.citaId
         && request.resource.data.estado == 'Pago realizado con éxito';
       allow delete: if false;
+    }
+
+    // Aviso al admin: qué barbero cobró qué servicio (lo escribe Caja dentro de la misma transacción del pago).
+    match /cobros/{citaId} {
+      allow read: if owner() || (barber() && resource.data.cobradoPor == request.auth.uid);
+      allow create: if barber()
+        && request.resource.data.cobradoPor == request.auth.uid
+        && request.resource.data.citaId == citaId
+        && getAfter(/databases/$(database)/documents/citas/$(citaId)).data.barberoId == request.auth.uid
+        && getAfter(/databases/$(database)/documents/citas/$(citaId)).data.estado in ['recibida','finalizada'];
+      allow update, delete: if owner();
+    }
+
+    // Códigos de descuento generados por el admin para un cliente concreto (1 a 100 %).
+    match /descuentos/{code} {
+      allow read: if owner() || (signedIn() && resource.data.clienteId == request.auth.uid);
+      allow create: if owner()
+        && request.resource.data.codigo == code
+        && request.resource.data.creadoPor == request.auth.uid
+        && request.resource.data.estado == 'activo'
+        && request.resource.data.clienteId is string
+        && request.resource.data.porcentaje is int
+        && request.resource.data.porcentaje >= 1
+        && request.resource.data.porcentaje <= 100;
+      // El cliente solo puede quemar SU código, y solo junto con la cita que lo usa (batch/transacción atómica).
+      allow update: if owner()
+        || (signedIn() && resource.data.clienteId == request.auth.uid
+          && resource.data.estado == 'activo'
+          && request.resource.data.estado == 'usado'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','citaId','usadoAt'])
+          && getAfter(/databases/$(database)/documents/citas/$(request.resource.data.citaId)).data.descuentoCodigo == code);
+      allow delete: if owner();
     }
   }
 }

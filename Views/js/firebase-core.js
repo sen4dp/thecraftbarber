@@ -34,6 +34,20 @@ export const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, c =
   '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
 }[c]));
 
+// ------------------------------------------------------------
+// Catálogo de servicios (precio fijo). Si cambias un precio aquí,
+// cámbialo también en Models/firestore.rules (función priceFor).
+// ------------------------------------------------------------
+export const SERVICES = [
+  { id:'general',                 nombre:'General',                     precio:18000 },
+  { id:'barberia',                nombre:'Barbería',                    precio:10000 },
+  { id:'general-diseno',          nombre:'General + Diseño',            precio:20000 },
+  { id:'general-barberia',        nombre:'General + Barbería',          precio:28000 },
+  { id:'general-diseno-barberia', nombre:'General + Diseño + Barbería', precio:30000 }
+];
+export const servicePrice = nombre => SERVICES.find(x => x.nombre === nombre)?.precio ?? 0;
+export const discountedTotal = (subtotal, pct) => Math.round(subtotal * (100 - pct) / 100);
+
 export function isOwner(profile) {
   return profile?.role === 'dueno' || profile?.role === 'admin';
 }

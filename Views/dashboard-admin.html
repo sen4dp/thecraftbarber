@@ -40,6 +40,13 @@
     <div class="dashboard-grid">
       <div class="col-main">
         <section class="card fade-in">
+          <div class="card-header-row"><h2 class="card-title">COBROS DE BARBEROS</h2><span class="badge-count" id="cobros-unread">0</span></div>
+          <p class="card-subtitle">Cada vez que un barbero cobra en caja aparece aquí qué servicio cobró.</p>
+          <div class="admin-actions" style="margin-bottom:10px"><button class="mini-btn secondary" id="cobros-mark-all" type="button">MARCAR TODOS COMO LEÍDOS</button></div>
+          <div id="cobros-list" class="admin-list"><p class="empty-message">AÚN NO HAY COBROS</p></div>
+        </section>
+
+        <section class="card fade-in">
           <div class="card-header-row"><h2 class="card-title">SOLICITUDES DE BARBEROS</h2><span class="badge-count" id="pending-count">0</span></div>
           <p class="card-subtitle">Revisa cada registro antes de darle acceso como barbero.</p>
           <div id="applications-list" class="admin-list"><p class="empty-message">NO HAY SOLICITUDES PENDIENTES</p></div>
@@ -64,7 +71,7 @@
 
         <section class="card fade-in">
           <h2 class="card-title">ENVIAR PROMOCIÓN</h2>
-          <p class="card-subtitle">Premia a un cliente desde su perfil.</p>
+          <p class="card-subtitle">Envía un mensaje o beneficio a la bandeja de un cliente.</p>
           <form id="promo-form" class="admin-form">
             <select id="promo-client" required><option value="">SELECCIONA UN CLIENTE</option></select>
             <input id="promo-title" type="text" maxlength="60" placeholder="Título de la promoción" required>
@@ -72,6 +79,19 @@
             <button class="btn-primary" type="submit">ENVIAR PROMOCIÓN</button>
           </form>
           <p id="promo-message-status" class="form-status"></p>
+        </section>
+
+        <section class="card fade-in">
+          <div class="card-header-row"><h2 class="card-title">CÓDIGOS DE DESCUENTO</h2><span class="badge-count" id="discounts-count">0</span></div>
+          <p class="card-subtitle">Genera un código para un cliente (1 a 100 %). El cliente lo escribe al pagar su cita.</p>
+          <form id="discount-form" class="admin-form">
+            <select id="discount-client" required><option value="">SELECCIONA UN CLIENTE</option></select>
+            <input id="discount-percent" type="number" min="1" max="100" step="1" placeholder="Descuento (1 a 100 %)" required>
+            <label class="check-row"><input type="checkbox" id="discount-send" checked> Enviar el código a su bandeja</label>
+            <button class="btn-primary" type="submit">GENERAR CÓDIGO</button>
+          </form>
+          <p id="discount-form-status" class="form-status"></p>
+          <div id="discounts-list" class="admin-list"><p class="empty-message">AÚN NO HAY CÓDIGOS</p></div>
         </section>
 
         <section class="card fade-in">
@@ -115,6 +135,8 @@
       <div class="promo-inbox-admin" id="client-modal-promos"></div>
     </div>
   </div>
+
+  <div id="toast" class="toast"></div>
 
   <footer class="footer"><p>&copy; 2026 THE CRAFT BARBER. TODOS LOS DERECHOS RESERVADOS.</p></footer>
   <script type="module" src="/Views/js/script-dbadmin.js"></script>

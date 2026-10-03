@@ -21,6 +21,7 @@
       </div>
     </div>
     <nav class="nav-buttons">
+      <a href="/Views/caja.html" class="btn-text">CAJA</a>
       <a href="/Views/home.html" class="btn-text">INICIO</a>
     </nav>
   </header>
@@ -45,15 +46,15 @@
           <span class="stat-label">PRÓXIMA CITA</span>
         </div>
         <div class="stat-chip">
-          <span class="stat-value" id="stat-gallery">0/5</span>
-          <span class="stat-label">FOTOS EN GALERÍA</span>
+          <span class="stat-value" id="stat-done">0</span>
+          <span class="stat-label">COBRADAS HOY</span>
         </div>
       </div>
     </section>
 
     <div class="dashboard-grid">
 
-      <!-- COLUMNA PRINCIPAL: agenda + galería -->
+      <!-- COLUMNA PRINCIPAL: agenda -->
       <div class="col-main">
 
         <!-- Agenda de trabajo -->
@@ -65,20 +66,6 @@
           <div class="appointments-grid" id="agenda-grid">
             <p class="empty-message" id="agenda-empty">AÚN NO TIENES CITAS ASIGNADAS</p>
           </div>
-        </section>
-
-        <!-- Galería de trabajos -->
-        <section class="card fade-in">
-          <div class="card-header-row">
-            <h2 class="card-title">GALERÍA DE TRABAJOS</h2>
-            <span class="badge-count" id="gallery-badge">0/5</span>
-          </div>
-          <p class="card-subtitle">Sube hasta 5 fotos de tus mejores trabajos para mostrarlas a los clientes.</p>
-
-          <div class="gallery-grid" id="gallery-grid"></div>
-
-          <input type="file" id="gallery-input" accept="image/*" multiple hidden>
-          <p class="gallery-hint" id="gallery-hint">Toca un espacio vacío para subir una foto (JPG o PNG).</p>
         </section>
 
       </div>

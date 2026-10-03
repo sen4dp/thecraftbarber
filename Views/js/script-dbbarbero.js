@@ -1,14 +1,13 @@
 import {
   auth, db, onAuthStateChanged, signOut, collection, doc, getDoc, getDocs,
-  query, where, onSnapshot, setDoc, updateDoc, deleteDoc, serverTimestamp,
-  escapeHtml, parseAppointmentDate, compressImage, getCurrentProfile, money
+  query, where, onSnapshot, setDoc, updateDoc, serverTimestamp,
+  escapeHtml, parseAppointmentDate, getCurrentProfile, money
 } from './firebase-core.js';
 
 const $=id=>document.getElementById(id);
 let currentUser=null, currentProfile=null;
-let unsubCitas=null, unsubNotes=null, unsubPortfolio=null;
+let unsubCitas=null, unsubNotes=null;
 let workingAppointmentId=null;
-const MAX_FOTOS=5;
 
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function greeting(){const h=new Date().getHours();return h<12?'BUENOS DÍAS':h<19?'BUENAS TARDES':'BUENAS NOCHES';}
@@ -28,6 +27,7 @@ function renderAgenda(citas){
   $('agenda-count').textContent=citas.filter(c=>c.estado!=='cancelada').length;
   $('stat-today').textContent=today.length;
   $('stat-next').textContent=next?.hora||'—';
+  $('stat-done').textContent=citas.filter(c=>c.fecha===todayKey()&&c.estadoPago==='pagado').length;
   if(!citas.length){$('agenda-grid').innerHTML='<p class="empty-message">AÚN NO TIENES CITAS ASIGNADAS</p>';return;}
   $('agenda-grid').innerHTML=citas.map(c=>`<div class="appointment-item ${c.estado==='trabajando'?'working':''}">
     <span class="badge">${statusLabel(c.estado)}</span>
@@ -35,7 +35,7 @@ function renderAgenda(citas){
     <div class="appointment-row"><span class="appointment-label">HORA</span><span class="appointment-value">${escapeHtml(c.hora)}</span></div>
     <div class="appointment-row"><span class="appointment-label">CLIENTE</span><span class="appointment-value">${escapeHtml(c.cliente||'CLIENTE')}</span></div>
     <div class="appointment-row"><span class="appointment-label">SERVICIO</span><span class="appointment-value">${escapeHtml(c.servicio||'CORTE')}</span></div>
-    <div class="appointment-row"><span class="appointment-label">TOTAL</span><span class="appointment-value">${money(c.total)}</span></div>
+    <div class="appointment-row"><span class="appointment-label">TOTAL</span><span class="appointment-value">${money(c.total)}${c.descuentoPct?` (-${c.descuentoPct}%)`:''}</span></div>
     <div class="barber-appointment-actions">
       ${c.estado==='reservada'?`<button class="mini-btn" data-work="${c.id}">EMPEZAR SERVICIO</button>`:''}
       ${c.estado==='trabajando'?`<button class="mini-btn" data-finish="${c.id}">FINALIZAR / RECIBIR</button>`:''}
@@ -71,31 +71,6 @@ $('agenda-grid').addEventListener('click',async e=>{
   try{if(w)await updateAppointment(w.dataset.work,'trabajando');if(f)await updateAppointment(f.dataset.finish,'finalizada');if(c)await updateAppointment(c.dataset.cancel,'cancelada');}catch(err){console.error(err);alert('No se pudo actualizar la cita.');}
 });
 
-async function loadPortfolio(){
-  if(unsubPortfolio)unsubPortfolio();
-  const q=query(collection(db,'barberPortfolio'),where('barberId','==',currentUser.uid));
-  unsubPortfolio=onSnapshot(q,snap=>{
-    const fotos=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.position||0)-(b.position||0));
-    renderGallery(fotos);
-  });
-}
-function renderGallery(fotos){
-  $('gallery-badge').textContent=`${fotos.length}/${MAX_FOTOS}`;$('stat-gallery').textContent=`${fotos.length}/${MAX_FOTOS}`;
-  $('gallery-grid').innerHTML=[...fotos.map((f,i)=>`<div class="gallery-slot"><img src="${f.dataUrl}" alt="Trabajo ${i+1}"><button class="gallery-remove" data-delete-photo="${f.id}">&times;</button></div>`),...Array(Math.max(0,MAX_FOTOS-fotos.length)).fill(0).map(()=>'<div class="gallery-slot gallery-slot-empty" data-add-slot><span class="plus-icon">+</span></div>')].join('');
-  $('gallery-hint').textContent=fotos.length>=MAX_FOTOS?'Máximo de 5 fotos alcanzado.':'Toca un espacio vacío para subir una foto JPG/PNG.';
-}
-$('gallery-grid').addEventListener('click',e=>{if(e.target.closest('[data-add-slot]') && $('gallery-input'))$('gallery-input').click();});
-$('gallery-grid').addEventListener('click',async e=>{const b=e.target.closest('[data-delete-photo]');if(!b)return;try{await deleteDoc(doc(db,'barberPortfolio',b.dataset.deletePhoto));}catch(err){alert('No se pudo eliminar la foto.');}});
-$('gallery-input').addEventListener('change',async e=>{
-  const files=[...e.target.files].slice(0,MAX_FOTOS);e.target.value='';
-  const snap=await getDocs(query(collection(db,'barberPortfolio'),where('barberId','==',currentUser.uid)));
-  const existing=snap.size;
-  if(existing>=MAX_FOTOS){alert('Ya tienes 5 fotos.');return;}
-  for(const file of files.slice(0,MAX_FOTOS-existing)){
-    try{const dataUrl=await compressImage(file);await setDoc(doc(collection(db,'barberPortfolio')),{barberId:currentUser.uid,dataUrl,position:existing,createdAt:serverTimestamp()});}catch(err){console.error(err);alert(err.message);}
-  }
-});
-
 function renderNotes(items){
   $('notes-count').textContent=items.length;
   $('notes-list').innerHTML=items.length?items.map(n=>`<div class="note-item"><span class="note-date">${formatDate(n.createdAt?.toDate?.()||new Date())}</span><p class="note-text">${escapeHtml(n.texto)}</p></div>`).join(''):'<p class="empty-message">NO TIENES NOTAS NUEVAS</p>';
@@ -126,6 +101,6 @@ onAuthStateChanged(auth,async user=>{
     $('user-name-display').textContent=name.toUpperCase();$('hero-username').textContent=name.toUpperCase();$('hero-greeting').textContent=greeting();$('hero-date').textContent=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'}).toUpperCase();$('modal-username').value=name.toUpperCase();$('modal-email').value=user.email||'';setInitial(name);
     await setPresence({working:false,workingCitaId:null});
     setInterval(()=>setPresence({working:!!workingAppointmentId,workingCitaId:workingAppointmentId||null}),30000);
-    await loadPortfolio();subscribeAppointments();subscribeNotes();await loadPayments();
+    subscribeAppointments();subscribeNotes();await loadPayments();
   }catch(err){console.error(err);alert('No se pudo cargar tu dashboard.');}
 });
