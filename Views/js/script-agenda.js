@@ -191,7 +191,9 @@ $('booking-form').addEventListener('submit',e=>{e.preventDefault();createAppoint
 async function loadPaymentInfo(){
   const box=$('payment-info');
   if(!selectedBarber || !selectedPayment || selectedPayment==='efectivo'){box.textContent=selectedPayment==='efectivo'?'Se generará un radicado único de 5 caracteres.':'Selecciona un método.';return;}
-  const snap=await getDoc(doc(db,'metodosPago',selectedBarber.id)); const p=snap.exists()?snap.data():{};
+  let p={};
+  try{const snap=await getDoc(doc(db,'metodosPago',selectedBarber.id));p=snap.exists()?snap.data():{};}
+  catch(e){console.error(e);box.textContent='No se pudieron cargar los datos de pago del barbero.';return;}
   const key=selectedPayment==='nequi'?'nequi':selectedPayment==='daviplata'?'daviplata':'breb';
   box.textContent=p[key] ? `PAGA POR ${selectedPayment.toUpperCase()}: ${p[key]}` : 'El barbero aún no ha configurado este método de pago.';
 }

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de tienda - The Craft Barber</title>
+  <link rel="stylesheet" href="/Views/css/style-dbadmin.css">
+  <link rel="stylesheet" href="/Views/css/style-tienda.css">
+</head>
+<body>
+  <div class="background-overlay"></div>
+
+  <header class="navbar">
+    <div class="user-info">
+      <div class="avatar"><span id="mg-avatar">T</span></div>
+      <div class="user-info-text">
+        <span class="user-name" id="mg-name">TIENDA</span>
+        <span class="user-role" id="mg-role">GESTIÓN DE PRODUCTOS</span>
+      </div>
+    </div>
+    <nav class="nav-buttons">
+      <a href="/Views/caja.html" class="btn-text">CAJA</a>
+      <a id="mg-back" href="/Views/home.html" class="btn-text">VOLVER</a>
+    </nav>
+  </header>
+
+  <main class="dashboard">
+    <section class="hero-banner fade-in">
+      <div class="hero-text">
+        <p class="hero-eyebrow">CATÁLOGO CAPILAR</p>
+        <h1 class="hero-title">GESTIÓN DE TIENDA</h1>
+        <p class="hero-date" id="mg-scope"></p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-chip"><span class="stat-value" id="st-products">0</span><span class="stat-label">PRODUCTOS</span></div>
+        <div class="stat-chip stat-chip-accent"><span class="stat-value" id="st-pending">0</span><span class="stat-label">PEDIDOS PENDIENTES</span></div>
+      </div>
+    </section>
+
+    <div class="dashboard-grid">
+      <div class="col-main">
+        <section class="card fade-in">
+          <div class="card-header-row"><h2 class="card-title">MIS PRODUCTOS</h2><span class="badge-count" id="products-count">0</span></div>
+          <div id="products-list" class="product-grid"><p class="empty-message">CARGANDO…</p></div>
+        </section>
+
+        <section class="card fade-in">
+          <div class="card-header-row"><h2 class="card-title">PEDIDOS RECIBIDOS</h2><span class="badge-count" id="orders-count">0</span></div>
+          <p class="card-subtitle">Pagos digitales: confirma cuando veas el dinero en tu cuenta. Pagos en efectivo: se cobran en CAJA con el radicado.</p>
+          <div id="orders-list" class="order-list"><p class="empty-message">AÚN NO HAY PEDIDOS</p></div>
+        </section>
+      </div>
+
+      <aside class="col-side">
+        <section class="card fade-in">
+          <h2 class="card-title" id="form-title">NUEVO PRODUCTO</h2>
+          <form id="product-form" class="admin-form">
+            <input type="hidden" id="p-id">
+            <label class="photo-preview" id="p-photo-box" for="p-photo">TOCA PARA SUBIR FOTO</label>
+            <input id="p-photo" type="file" accept="image/*" hidden>
+            <input id="p-name" maxlength="80" placeholder="Nombre del producto" required>
+            <select id="p-cat" required></select>
+            <textarea id="p-desc" maxlength="400" placeholder="Descripción (opcional)"></textarea>
+            <input id="p-price" type="number" min="100" step="100" placeholder="Precio en COP" required>
+            <input id="p-stock" type="number" min="0" step="1" placeholder="Unidades disponibles" required>
+            <label class="check-row"><input type="checkbox" id="p-active" checked> Visible en la tienda</label>
+            <button class="btn-primary" type="submit" id="p-submit">GUARDAR PRODUCTO</button>
+            <button class="mini-btn secondary" type="button" id="p-cancel" hidden>CANCELAR EDICIÓN</button>
+          </form>
+          <p id="p-status" class="form-status"></p>
+        </section>
+
+        <section class="card fade-in">
+          <h2 class="card-title">MIS MÉTODOS DE PAGO</h2>
+          <p class="card-subtitle" id="pay-hint">Los clientes verán estos datos al pagar tus productos.</p>
+          <form id="pay-form" class="admin-form">
+            <input id="pay-nequi" maxlength="80" placeholder="Nequi: número / llave">
+            <input id="pay-daviplata" maxlength="80" placeholder="Daviplata: número / llave">
+            <input id="pay-breb" maxlength="80" placeholder="Bre-B: llave">
+            <button class="btn-primary" type="submit">GUARDAR MÉTODOS</button>
+          </form>
+          <p id="pay-status" class="form-status"></p>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <footer class="footer"><p>&copy; 2026 THE CRAFT BARBER. TODOS LOS DERECHOS RESERVADOS.</p></footer>
+  <script type="module" src="/Views/js/script-productos.js"></script>
+</body>
+</html>

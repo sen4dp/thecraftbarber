@@ -115,7 +115,7 @@ body {
 .user-role {
   font-size: 11px;
   letter-spacing: 0.5px;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .nav-buttons {
@@ -157,7 +157,7 @@ body {
 .hero-eyebrow {
   font-size: 12px;
   letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.92);
   margin-bottom: 6px;
 }
 
@@ -171,7 +171,7 @@ body {
 
 .hero-date {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .hero-stats {
@@ -354,7 +354,7 @@ body {
 
 .badge-today {
   background-color: var(--accent-amber);
-  color: #ffffff;
+  color: var(--ink);
 }
 
 .badge-next {
@@ -369,7 +369,7 @@ body {
 
 .badge-new {
   background-color: var(--accent-amber);
-  color: #ffffff;
+  color: var(--ink);
 }
 
 /* GALERÍA DE TRABAJOS */
@@ -641,3 +641,16 @@ body {
   text-align: center;
   font-size: 11px;
 }
+
+/* ---- Componentes que dashboard-barbero.html usa pero no tenían estilo ---- */
+.card-subtitle{font-size:13px;color:var(--muted);margin-bottom:14px}
+.admin-form{display:flex;flex-direction:column;gap:10px}
+.admin-form input,.admin-form select,.admin-form textarea{width:100%;border:3px solid var(--border-color);background:#fff;color:var(--ink);padding:10px;font-family:var(--font-body);font-size:13px;outline:none}
+.admin-form input:focus,.admin-form select:focus,.admin-form textarea:focus{border-color:var(--primary-green);box-shadow:0 0 0 3px rgba(52,118,33,.25)}
+.form-status{font-size:11px;margin-top:8px;min-height:17px;color:var(--ink)}
+.mini-btn{border:2px solid var(--border-color);background:var(--primary-green);color:#ffffff;padding:8px 9px;font-family:var(--font-display);font-size:8px;cursor:pointer;box-shadow:0 3px 0 var(--border-color)}
+.mini-btn.reject{background:var(--danger)}
+.mini-btn.secondary{background:var(--dark-green)}
+.mini-btn:active{transform:translateY(2px);box-shadow:none}
+.barber-appointment-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.appointment-item.working{border-color:var(--accent-amber-dark);background:#fff6df}

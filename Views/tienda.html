@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tienda - The Craft Barber</title>
+  <link rel="stylesheet" href="/Views/css/style-dbadmin.css">
+  <link rel="stylesheet" href="/Views/css/style-tienda.css">
+</head>
+<body>
+  <div class="background-overlay"></div>
+
+  <header class="navbar">
+    <div class="user-info">
+      <div class="avatar"><span id="shop-avatar">T</span></div>
+      <div class="user-info-text">
+        <span class="user-name" id="shop-user">TIENDA</span>
+        <span class="user-role">PRODUCTOS CAPILARES</span>
+      </div>
+    </div>
+    <nav class="nav-buttons">
+      <a href="/Views/agenda.html" class="btn-text">AGENDAR</a>
+      <a href="/Views/dashboard-usuario.html" class="btn-text">MI PERFIL</a>
+    </nav>
+  </header>
+
+  <main class="dashboard">
+    <section class="hero-banner fade-in">
+      <div class="hero-text">
+        <p class="hero-eyebrow">THE CRAFT BARBER</p>
+        <h1 class="hero-title">TIENDA</h1>
+        <p class="hero-date">PRODUCTOS DE NUESTROS BARBEROS Y DEL DUEÑO</p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-chip"><span class="stat-value" id="stat-products">0</span><span class="stat-label">PRODUCTOS</span></div>
+        <div class="stat-chip stat-chip-accent"><span class="stat-value" id="stat-cart">0</span><span class="stat-label">EN EL CARRITO</span></div>
+      </div>
+    </section>
+
+    <div class="shop-layout">
+      <div class="shop-main">
+        <section class="card fade-in">
+          <div class="card-header-row"><h2 class="card-title">CATÁLOGO</h2><span class="badge-count" id="catalog-count">0</span></div>
+          <div class="shop-filters">
+            <input id="f-search" type="search" placeholder="Buscar producto…" autocomplete="off">
+            <select id="f-category"><option value="">TODAS LAS CATEGORÍAS</option></select>
+            <select id="f-seller"><option value="">TODOS LOS VENDEDORES</option></select>
+          </div>
+          <div id="product-grid" class="product-grid"><p class="empty-message">CARGANDO PRODUCTOS…</p></div>
+        </section>
+
+        <section class="card fade-in">
+          <div class="card-header-row"><h2 class="card-title">MIS PEDIDOS</h2><span class="badge-count" id="orders-count">0</span></div>
+          <div id="orders-list" class="order-list"><p class="empty-message">AÚN NO HAS HECHO PEDIDOS</p></div>
+        </section>
+      </div>
+
+      <aside class="shop-side">
+        <section class="card fade-in" id="cart-card">
+          <h2 class="card-title">MI CARRITO</h2>
+          <div id="cart-lines"><p class="empty-message">TU CARRITO ESTÁ VACÍO</p></div>
+          <div id="cart-total" class="cart-total" hidden><span>TOTAL</span><span id="cart-total-value">$0</span></div>
+
+          <div id="checkout-box" hidden>
+            <h2 class="card-title" style="margin-top:18px">MÉTODO DE PAGO</h2>
+            <div class="pay-options" id="pay-options"></div>
+            <div class="pay-info" id="pay-info">Selecciona un método de pago.</div>
+            <button type="button" class="btn-primary" id="btn-checkout" style="width:100%">CONFIRMAR PEDIDO</button>
+            <button type="button" class="mini-btn secondary" id="btn-clear" style="width:100%;margin-top:10px">VACIAR CARRITO</button>
+          </div>
+          <p id="checkout-status" class="form-status"></p>
+          <div id="checkout-result"></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <footer class="footer"><p>&copy; 2026 THE CRAFT BARBER. TODOS LOS DERECHOS RESERVADOS.</p></footer>
+  <script type="module" src="/Views/js/script-tienda.js"></script>
+</body>
+</html>

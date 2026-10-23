@@ -10,6 +10,11 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(uid)).data.status == 'approved';
     }
 
+    function activeSeller(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role in ['dueno','admin']
+        || activeBarber(uid);
+    }
+
     // Precios fijos de los servicios (deben coincidir con SERVICES en firebase-core.js).
     function priceFor(s) {
       return s == 'General' ? 18000
@@ -105,7 +110,10 @@ service cloud.firestore {
     }
 
     match /metodosPago/{uid} {
-      allow read, write: if signedIn() && (uid == request.auth.uid || owner());
+      // Lectura: cualquier usuario autenticado (el cliente necesita ver a quién pagar).
+      // Escritura: solo el dueño de esos datos o el Dueño/admin.
+      allow read: if signedIn();
+      allow write: if signedIn() && (uid == request.auth.uid || owner());
     }
 
     match /radicados/{code} {
@@ -117,20 +125,42 @@ service cloud.firestore {
       allow update: if (owner() || (barber() && resource.data.barberoId == request.auth.uid))
         && resource.data.estado == 'activo'
         && request.resource.data.estado == 'usado'
-        && request.resource.data.citaId == resource.data.citaId
-        && getAfter(/databases/$(database)/documents/transacciones/$(request.resource.data.citaId)).data.estado == 'Pago realizado con éxito'
-        && getAfter(/databases/$(database)/documents/citas/$(resource.data.citaId)).data.estado in ['recibida','finalizada'];
+        && (
+          // Radicado de una CITA
+          ('citaId' in resource.data
+            && request.resource.data.citaId == resource.data.citaId
+            && getAfter(/databases/$(database)/documents/transacciones/$(request.resource.data.citaId)).data.estado == 'Pago realizado con éxito'
+            && getAfter(/databases/$(database)/documents/citas/$(resource.data.citaId)).data.estado in ['recibida','finalizada'])
+          ||
+          // Radicado de un PEDIDO de la tienda
+          ('ordenId' in resource.data
+            && request.resource.data.ordenId == resource.data.ordenId
+            && getAfter(/databases/$(database)/documents/transacciones/$(resource.data.ordenId)).data.estado == 'Pago realizado con éxito'
+            && getAfter(/databases/$(database)/documents/ordenes/$(resource.data.ordenId)).data.estadoPago == 'pagado')
+        );
       allow delete: if false;
     }
 
     match /transacciones/{id} {
       allow read: if owner() || barber();
-      allow create: if (owner() || (barber()
-          && getAfter(/databases/$(database)/documents/citas/$(request.resource.data.citaId)).data.barberoId == request.auth.uid))
-        && request.resource.data.estado == 'Pago realizado con éxito'
-        && request.resource.data.citaId is string
-        && getAfter(/databases/$(database)/documents/radicados/$(request.resource.data.radicado)).data.estado == 'usado'
-        && getAfter(/databases/$(database)/documents/citas/$(request.resource.data.citaId)).data.estado in ['recibida','finalizada'];
+      allow create: if request.resource.data.estado == 'Pago realizado con éxito'
+        && (
+          // Transacción de una CITA (flujo original)
+          ('citaId' in request.resource.data
+            && request.resource.data.citaId is string
+            && (owner() || (barber()
+              && getAfter(/databases/$(database)/documents/citas/$(request.resource.data.citaId)).data.barberoId == request.auth.uid))
+            && getAfter(/databases/$(database)/documents/radicados/$(request.resource.data.radicado)).data.estado == 'usado'
+            && getAfter(/databases/$(database)/documents/citas/$(request.resource.data.citaId)).data.estado in ['recibida','finalizada'])
+          ||
+          // Transacción de un PEDIDO de la tienda
+          ('ordenId' in request.resource.data
+            && request.resource.data.ordenId is string
+            && (owner() || (barber()
+              && getAfter(/databases/$(database)/documents/ordenes/$(request.resource.data.ordenId)).data.vendedorId == request.auth.uid))
+            && getAfter(/databases/$(database)/documents/radicados/$(request.resource.data.radicado)).data.estado == 'usado'
+            && getAfter(/databases/$(database)/documents/ordenes/$(request.resource.data.ordenId)).data.estadoPago == 'pagado')
+        );
       allow update: if (owner() || (barber()
           && get(/databases/$(database)/documents/citas/$(resource.data.citaId)).data.barberoId == request.auth.uid))
         && resource.data.citaId == request.resource.data.citaId
@@ -143,9 +173,16 @@ service cloud.firestore {
       allow read: if owner() || (barber() && resource.data.cobradoPor == request.auth.uid);
       allow create: if barber()
         && request.resource.data.cobradoPor == request.auth.uid
-        && request.resource.data.citaId == citaId
-        && getAfter(/databases/$(database)/documents/citas/$(citaId)).data.barberoId == request.auth.uid
-        && getAfter(/databases/$(database)/documents/citas/$(citaId)).data.estado in ['recibida','finalizada'];
+        && (
+          ('citaId' in request.resource.data && request.resource.data.citaId == citaId
+            && getAfter(/databases/$(database)/documents/citas/$(citaId)).data.barberoId == request.auth.uid
+            && getAfter(/databases/$(database)/documents/citas/$(citaId)).data.estado in ['recibida','finalizada'])
+          ||
+          // El id del documento es el id del pedido (no hay colisión con ids de citas).
+          ('ordenId' in request.resource.data && request.resource.data.ordenId == citaId
+            && getAfter(/databases/$(database)/documents/ordenes/$(citaId)).data.vendedorId == request.auth.uid
+            && getAfter(/databases/$(database)/documents/ordenes/$(citaId)).data.estadoPago == 'pagado')
+        );
       allow update, delete: if owner();
     }
 
@@ -167,6 +204,56 @@ service cloud.firestore {
           && request.resource.data.estado == 'usado'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','citaId','usadoAt'])
           && getAfter(/databases/$(database)/documents/citas/$(request.resource.data.citaId)).data.descuentoCodigo == code);
+      allow delete: if owner();
+    }
+
+    // ============================================================
+    // TIENDA: productos capilares y pedidos
+    // ============================================================
+    match /productos/{id} {
+      // Catálogo visible para cualquier usuario con sesión.
+      allow read: if signedIn();
+      allow create: if (owner() || barber())
+        && request.resource.data.vendedorId == request.auth.uid
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 80
+        && request.resource.data.precio is int && request.resource.data.precio > 0
+        && request.resource.data.stock is int && request.resource.data.stock >= 0
+        && request.resource.data.activo is bool
+        && (!('imagen' in request.resource.data) || request.resource.data.imagen.size() < 400000);
+      // El dueño edita cualquiera; el barbero solo los suyos y sin cambiar el vendedor.
+      allow update: if (owner() || (barber() && resource.data.vendedorId == request.auth.uid))
+        && request.resource.data.vendedorId == resource.data.vendedorId
+        && request.resource.data.precio is int && request.resource.data.precio > 0
+        && request.resource.data.stock is int && request.resource.data.stock >= 0
+        && (!('imagen' in request.resource.data) || request.resource.data.imagen.size() < 400000);
+      allow delete: if owner() || (barber() && resource.data.vendedorId == request.auth.uid);
+    }
+
+    match /ordenes/{id} {
+      allow read: if owner() || (signedIn() && (
+        resource.data.userId == request.auth.uid || resource.data.vendedorId == request.auth.uid));
+      // El cliente crea el pedido en estado pendiente. El TOTAL real lo recalcula el vendedor
+      // al cobrar (settleOrder) con los precios actuales de `productos`.
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && activeSeller(request.resource.data.vendedorId)
+        && request.resource.data.estado == 'pendiente'
+        && request.resource.data.estadoPago == 'pendiente'
+        && request.resource.data.metodoPago in ['nequi','daviplata','breb','efectivo']
+        && request.resource.data.items is list
+        && request.resource.data.items.size() >= 1 && request.resource.data.items.size() <= 15;
+      allow update: if owner()
+        // Vendedor: confirma pago / entrega / cancela. Nunca cambia cliente ni vendedor.
+        || (barber() && resource.data.vendedorId == request.auth.uid
+          && request.resource.data.vendedorId == resource.data.vendedorId
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','estadoPago','subtotal','total','paidAt','deliveredAt','cancelledAt','updatedAt']))
+        // Cliente: solo puede cancelar su pedido mientras esté pendiente.
+        || (signedIn() && resource.data.userId == request.auth.uid
+          && resource.data.estado == 'pendiente'
+          && request.resource.data.estado == 'cancelado'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado','cancelledAt','updatedAt']));
       allow delete: if owner();
     }
   }

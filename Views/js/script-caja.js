@@ -1,4 +1,5 @@
 import {auth,db,onAuthStateChanged,collection,doc,getDoc,runTransaction,getCurrentProfile,escapeHtml,money,serverTimestamp} from './firebase-core.js';
+import {settleOrder} from './shop-core.js';
 const $=id=>document.getElementById(id);
 let profile=null;
 
@@ -16,6 +17,8 @@ async function lookup(){
     if(!r.exists()){$('cash-result').textContent='RADICADO NO ENCONTRADO.';return;}
     const rad=r.data();
     if(rad.estado!=='activo'){$('cash-result').textContent='ESTE RADICADO YA FUE UTILIZADO O ESTÁ INACTIVO.';return;}
+    // Radicado de un pedido de la tienda (productos capilares).
+    if(rad.ordenId){await showOrden(rad.ordenId,code);return;}
     const c=await getDoc(doc(db,'citas',rad.citaId));
     if(!c.exists()){$('cash-result').textContent='LA CITA ASOCIADA YA NO EXISTE.';return;}
     showCita({id:c.id,...c.data(),radicado:code});
@@ -24,6 +27,34 @@ async function lookup(){
     // Las reglas solo dejan a un barbero leer los radicados de sus propias citas.
     $('cash-result').textContent=profile?.role==='barbero'?'RADICADO NO ENCONTRADO O NO CORRESPONDE A UNA DE TUS CITAS.':'NO SE PUDO CONSULTAR EL RADICADO.';
   }
+}
+
+// ---------- Pedidos de la tienda ----------
+// El total se recalcula con los precios ACTUALES del catálogo (no con lo que envió el cliente).
+async function showOrden(ordenId,code){
+  const o=await getDoc(doc(db,'ordenes',ordenId));
+  if(!o.exists()){$('cash-result').textContent='EL PEDIDO ASOCIADO YA NO EXISTE.';return;}
+  const orden={id:o.id,...o.data()};
+  if(orden.estado!=='pendiente'){$('cash-result').textContent='ESTE PEDIDO YA NO ESTÁ PENDIENTE ('+(orden.estado||'').toUpperCase()+').';return;}
+  let total=0,rows='',problems=[];
+  for(const it of orden.items||[]){
+    const p=await getDoc(doc(db,'productos',it.productoId));
+    if(!p.exists()){problems.push('«'+it.nombre+'» ya no existe en el catálogo.');continue;}
+    const d=p.data();
+    if(d.stock<it.cantidad)problems.push('Stock insuficiente de «'+it.nombre+'» (quedan '+d.stock+').');
+    total+=d.precio*it.cantidad;
+    rows+='<li>'+it.cantidad+'× '+escapeHtml(it.nombre)+' — '+money(d.precio*it.cantidad)+'</li>';
+  }
+  $('cash-result').innerHTML='<div class="cash-box"><p><strong>PEDIDO DE PRODUCTOS</strong></p><p><strong>CLIENTE</strong><br>'+escapeHtml(orden.cliente||'CLIENTE')+'</p><ul class="cash-items">'+rows+'</ul><p><strong>TOTAL EN EFECTIVO</strong><br>'+money(total)+'</p>'
+    +(problems.length?'<p class="cash-warn">'+problems.map(escapeHtml).join('<br>')+'</p>':'<button id="btn-redeem" class="btn-primary">CONFIRMAR PAGO / CANJEAR</button>')+'</div>';
+  if(!problems.length)$('btn-redeem').onclick=()=>redeemOrden(orden,code);
+}
+async function redeemOrden(orden,code){
+  try{
+    await settleOrder({ordenId:orden.id,radicado:code,actorUid:auth.currentUser.uid,actorProfile:profile,actorEmail:auth.currentUser.email||''});
+    $('cash-result').innerHTML='<div class="success-box"><strong>✓ PAGO REALIZADO CON ÉXITO</strong><p>El radicado quedó inutilizado, se descontó el stock y el pedido figura como pagado. Entrega los productos al cliente.'+(profile.role==='barbero'?' El administrador fue notificado del cobro.':'')+'</p></div>';
+    $('cash-code').value='';
+  }catch(e){console.error(e);$('cash-result').textContent=e.message||'No se pudo canjear el radicado.';}
 }
 
 async function redeem(cita){

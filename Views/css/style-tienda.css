@@ -1,0 +1,89 @@
+/* ============================================================
+   THE CRAFT BARBER - Tienda (catálogo, carrito, pedidos)
+   Se carga DESPUÉS de style-dbadmin.css y reutiliza sus variables.
+   Regla de legibilidad: fondo claro => texto oscuro (var(--ink));
+   fondo verde/oscuro => texto blanco. Nada de blanco sobre claro.
+   ============================================================ */
+
+.shop-layout{display:grid;grid-template-columns:2fr 1fr;gap:var(--space-lg);align-items:start}
+.shop-main,.shop-side{display:flex;flex-direction:column;gap:var(--space-lg)}
+.shop-side{position:sticky;top:16px}
+
+/* ---------- Filtros ---------- */
+.shop-filters{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;margin-bottom:var(--space-md)}
+.shop-filters input,.shop-filters select{width:100%;border:3px solid #000;background:#fff;color:var(--ink);padding:10px;font-family:var(--font-body);font-size:14px;outline:none}
+.shop-filters input:focus,.shop-filters select:focus,.admin-form input:focus,.admin-form select:focus,.admin-form textarea:focus{border-color:var(--primary-green);box-shadow:0 0 0 3px rgba(52,118,33,.25)}
+
+/* ---------- Grilla de productos ---------- */
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:var(--space-md)}
+.product-card{display:flex;flex-direction:column;border:3px solid #000;background:#f7f7f7;color:var(--ink);box-shadow:0 4px 0 var(--dark-green);transition:transform .12s ease}
+.product-card:hover{transform:translateY(-2px)}
+.product-card.is-off{opacity:.6}
+.product-thumb{position:relative;aspect-ratio:1/1;background:#e8e8e8;border-bottom:3px solid #000;overflow:hidden}
+.product-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.product-thumb .no-photo{display:flex;align-items:center;justify-content:center;height:100%;font-family:var(--font-display);font-size:10px;color:var(--muted);text-align:center;padding:10px}
+.product-body{display:flex;flex-direction:column;gap:6px;padding:12px;flex:1}
+.product-cat{font-size:11px;color:var(--muted);letter-spacing:.5px}
+.product-name{font-family:var(--font-display);font-size:10px;line-height:1.5;color:var(--primary-green);word-break:break-word}
+.product-desc{font-size:13px;color:var(--ink);line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.product-seller{font-size:11px;color:var(--muted)}
+.product-price{font-family:var(--font-display);font-size:12px;color:var(--ink);margin-top:auto}
+.product-actions{display:flex;gap:7px;flex-wrap:wrap;padding:0 12px 12px}
+.product-actions .mini-btn,.product-actions .btn-primary{flex:1;min-width:90px}
+
+/* Etiquetas de estado: SIEMPRE con texto oscuro sobre fondos claros/ámbar */
+.tag{display:inline-block;font-family:var(--font-display);font-size:8px;padding:5px 7px;border:2px solid #000;line-height:1.3}
+.tag-ok{background:var(--primary-green);color:#fff}
+.tag-warn{background:var(--accent-amber);color:var(--ink)}
+.tag-off{background:#cfcfcf;color:var(--ink)}
+.tag-danger{background:var(--danger);color:#fff}
+.stock-tag{position:absolute;top:8px;left:8px}
+
+/* ---------- Carrito ---------- */
+.cart-line{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;border:3px solid #000;background:#f7f7f7;color:var(--ink);padding:8px}
+.cart-line img,.cart-line .cart-ph{width:52px;height:52px;object-fit:cover;border:2px solid #000;background:#e8e8e8}
+.cart-line-name{font-size:13px;font-weight:600;line-height:1.3}
+.cart-line-sub{font-size:12px;color:var(--muted)}
+.qty{display:inline-flex;align-items:center;gap:6px;margin-top:6px}
+.qty button{width:28px;height:28px;border:2px solid #000;background:var(--primary-green);color:#fff;font-family:var(--font-display);font-size:11px;cursor:pointer}
+.qty button:disabled{background:#cfcfcf;color:var(--ink);cursor:not-allowed}
+.qty span{min-width:22px;text-align:center;font-weight:700;color:var(--ink)}
+.cart-remove{border:2px solid #000;background:var(--danger);color:#fff;width:28px;height:28px;cursor:pointer;font-size:16px;line-height:1}
+.cart-total{display:flex;justify-content:space-between;align-items:center;border-top:3px solid #000;margin-top:12px;padding-top:12px;font-family:var(--font-display);font-size:11px;color:var(--ink)}
+.cart-seller-group{font-size:11px;color:var(--muted);margin:10px 0 4px;letter-spacing:.5px}
+
+/* ---------- Selector de pago ---------- */
+.pay-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.pay-btn{border:3px solid #000;background:#f7f7f7;color:var(--ink);padding:10px 6px;font-family:var(--font-display);font-size:8px;cursor:pointer;box-shadow:0 3px 0 #000}
+.pay-btn.selected{background:var(--primary-green);color:#fff}
+.pay-btn:disabled{background:#e0e0e0;color:#777;cursor:not-allowed;box-shadow:none}
+.pay-info{border:3px solid #000;background:#eef6ea;color:var(--ink);padding:10px;font-size:13px;line-height:1.6;margin-bottom:12px}
+.pay-info strong{color:var(--primary-green)}
+.pay-info .pay-warn{color:var(--danger-dark);font-weight:600}
+
+/* ---------- Pedidos ---------- */
+.order-card{border:3px solid #000;background:#f7f7f7;color:var(--ink);padding:12px;display:flex;flex-direction:column;gap:8px}
+.order-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+.order-meta{font-size:12px;color:var(--muted);line-height:1.6}
+.order-items{font-size:13px;line-height:1.6;border-left:4px solid var(--primary-green);padding-left:10px}
+.order-total{font-family:var(--font-display);font-size:10px;color:var(--ink)}
+.order-actions{display:flex;gap:7px;flex-wrap:wrap}
+.order-list{display:flex;flex-direction:column;gap:10px;max-height:520px;overflow:auto}
+
+/* ---------- Resultado del checkout ---------- */
+.result-box{border:3px solid var(--primary-green);background:#eef6ea;color:var(--ink);padding:14px;margin-top:12px;line-height:1.6}
+.result-box h3{font-family:var(--font-display);font-size:10px;color:var(--primary-green);margin-bottom:8px}
+.result-box .code-chip{margin:4px 0}
+
+/* ---------- Formulario de producto ---------- */
+.photo-preview{width:100%;aspect-ratio:16/10;border:3px dashed #999;background:#fafafa;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:13px;cursor:pointer}
+.photo-preview img{width:100%;height:100%;object-fit:cover}
+.field-label{display:block;font-size:11px;color:var(--primary-green);margin:2px 0 4px;font-family:var(--font-display)}
+.cart-fab{position:relative}
+.cart-fab .badge-count{margin-left:6px}
+
+@media(max-width:900px){
+  .shop-layout{grid-template-columns:1fr}
+  .shop-side{position:static}
+  .shop-filters{grid-template-columns:1fr}
+}
