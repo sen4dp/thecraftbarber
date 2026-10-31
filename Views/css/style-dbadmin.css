@@ -23,3 +23,33 @@
 /* Antes: texto verde claro (#9be06f) sobre tarjeta blanca = ilegible */
 .success-box{padding:22px;border:3px solid var(--primary-green);background:#eef6ea;color:#1f5a12;line-height:1.6}
 .success-box strong{color:#1f5a12}
+
+/* ===== INFORMES (modal del Admin) ===== */
+.modal-overlay.open{display:flex}
+.modal-content.reports-modal{width:min(980px,100%)}
+.reports-modal [hidden]{display:none!important}
+.report-controls{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;align-items:end}
+.report-controls .form-group{margin-bottom:0}
+.report-controls select,.report-controls input{width:100%;padding:10px;border:3px solid #000;background:#fff;color:var(--ink);font-family:var(--font-body);font-size:14px}
+.rep-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.rep-seg{display:flex;gap:6px;margin-right:8px}
+.mini-btn.secondary.active{background:var(--accent-amber);color:var(--ink)}
+.rep-period{font-size:12px;color:var(--muted);margin-bottom:10px}
+.rep-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.rep-kpi{border:3px solid #000;background:#f7f7f7;padding:10px;display:flex;flex-direction:column;gap:6px}
+.rep-kpi-val{font-family:var(--font-display);font-size:11px;color:var(--primary-green);word-break:break-word}
+.rep-kpi-label{font-size:10px;color:var(--muted)}
+.rep-chart{border:3px solid #000;background:#fff;padding:12px;margin-bottom:16px;color:var(--ink)}
+.rep-scroll{overflow-x:auto}
+.rep-pie{display:flex;gap:24px;align-items:center;justify-content:center;flex-wrap:wrap}
+.rep-legend{list-style:none;display:flex;flex-direction:column;gap:8px;min-width:240px}
+.rep-legend li{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+.rep-chip{width:16px;height:16px;border:2px solid #000;flex:none}
+.rep-leg-name{flex:1;min-width:0}
+.rep-leg-val{font-size:12px;color:var(--muted);white-space:nowrap}
+.rep-table{width:100%;border-collapse:collapse;color:var(--ink);font-size:13px}
+.rep-table th,.rep-table td{border:2px solid #000;padding:8px;text-align:left}
+.rep-table th{background:var(--primary-green);color:#fff;font-family:var(--font-display);font-size:8px}
+.rep-table tbody tr:nth-child(even){background:#f3f3f3}
+.rep-table tfoot td{font-weight:700;background:#eef6ea}
+@media(max-width:700px){.report-controls{grid-template-columns:1fr 1fr}.report-controls .rep-wide{grid-column:1/-1}}

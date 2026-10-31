@@ -20,6 +20,7 @@
     <nav class="nav-buttons"><a href="/Views/productos.html" class="btn-text">TIENDA</a>
       <a href="/Views/caja.html" class="btn-text">CAJA</a>
       <a href="/Views/home.html" class="btn-text">INICIO</a>
+      <button class="btn-text" id="btn-reports" type="button">INFORMES</button>
       <button class="btn-text danger-btn" id="btn-admin-logout">SALIR</button>
     </nav>
   </header>
@@ -137,9 +138,60 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="reports-modal">
+    <div class="modal-content reports-modal">
+      <button class="modal-close" id="reports-close" type="button">&times;</button>
+      <h2 class="modal-title">INFORMES</h2>
+      <p class="card-subtitle">Elige el informe y el periodo (por día, semana, mes, semestre o año). Los datos salen de las citas y pedidos pagados.</p>
+
+      <div class="report-controls">
+        <div class="form-group rep-wide"><label for="rep-type">INFORME</label><select id="rep-type"></select></div>
+        <div class="form-group"><label for="rep-from">DESDE</label><input type="date" id="rep-from"></div>
+        <div class="form-group"><label for="rep-to">HASTA</label><input type="date" id="rep-to"></div>
+        <div class="form-group" id="rep-gran-wrap"><label for="rep-gran">AGRUPAR POR</label>
+          <select id="rep-gran">
+            <option value="auto">AUTOMÁTICO</option>
+            <option value="day">DÍA</option>
+            <option value="week">SEMANA</option>
+            <option value="month">MES</option>
+            <option value="semester">SEMESTRE</option>
+            <option value="year">AÑO</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="rep-bar" id="rep-presets">
+        <button class="mini-btn secondary" type="button" data-preset="today">HOY</button>
+        <button class="mini-btn secondary" type="button" data-preset="7d">7 DÍAS</button>
+        <button class="mini-btn secondary" type="button" data-preset="30d">30 DÍAS</button>
+        <button class="mini-btn secondary" type="button" data-preset="month">ESTE MES</button>
+        <button class="mini-btn secondary" type="button" data-preset="3m">3 MESES</button>
+        <button class="mini-btn secondary" type="button" data-preset="6m">SEMESTRE</button>
+        <button class="mini-btn secondary" type="button" data-preset="year">ESTE AÑO</button>
+        <button class="mini-btn secondary" type="button" data-preset="all">TODO</button>
+      </div>
+
+      <div class="rep-bar">
+        <div class="rep-seg" id="rep-chart-type">
+          <button class="mini-btn secondary active" type="button" data-chart="bar">BARRAS</button>
+          <button class="mini-btn secondary" type="button" data-chart="pie">TORTA</button>
+        </div>
+        <button class="mini-btn" type="button" id="rep-refresh">ACTUALIZAR</button>
+        <button class="mini-btn" type="button" id="rep-csv">DESCARGAR CSV</button>
+      </div>
+
+      <p id="rep-status" class="form-status"></p>
+      <p id="rep-period" class="rep-period"></p>
+      <div id="rep-kpis" class="rep-kpis"></div>
+      <div id="rep-chart" class="rep-chart"></div>
+      <div id="rep-table"></div>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 
   <footer class="footer"><p>&copy; 2026 THE CRAFT BARBER. TODOS LOS DERECHOS RESERVADOS.</p></footer>
   <script type="module" src="/Views/js/script-dbadmin.js"></script>
+  <script type="module" src="/Views/js/script-informes.js"></script>
 </body>
 </html>
