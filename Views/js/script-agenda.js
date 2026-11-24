@@ -1,6 +1,6 @@
 import {
   auth, db, onAuthStateChanged, collection, doc, getDoc, getDocs, query, where,
-  onSnapshot, runTransaction, serverTimestamp, escapeHtml, money, scheduleForDate,
+  onSnapshot, writeBatch, serverTimestamp, escapeHtml, money, scheduleForDate, randomCode,
   getCurrentProfile, SERVICES, servicePrice, discountedTotal
 } from './firebase-core.js';
 
@@ -33,9 +33,14 @@ function renderBarbers() {
 }
 
 async function loadBarbers() {
-  const snap = await getDocs(query(collection(db,'users'), where('role','==','barbero'), where('status','==','approved')));
-  barbers = snap.docs.map(d=>({id:d.id,...d.data()}));
-  renderBarbers();
+  try {
+    const snap = await getDocs(query(collection(db,'users'), where('role','==','barbero'), where('status','==','approved')));
+    barbers = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderBarbers();
+  } catch (e) {
+    console.error(e);
+    $('barber-list').innerHTML = '<p class="empty-message">NO SE PUDIERON CARGAR LOS BARBEROS.</p>';
+  }
 }
 
 function renderServices() {
@@ -88,23 +93,24 @@ function renderTimes(citas=[]) {
   if (!selectedDate || !selectedBarber) { $('time-list').innerHTML='<p class="empty-message">ELIGE BARBERO Y FECHA.</p>'; return; }
   const busy=new Set(citas.map(c=>c.hora));
   const slots=scheduleForDate(new Date(`${selectedDate}T12:00:00`));
+  // Hoy: las horas que ya empezaron no se pueden reservar.
+  const now=new Date(), isToday=selectedDate===dateKey(now);
+  const past=t=>isToday && Number(t.slice(0,2))<=now.getHours();
   $('time-list').innerHTML=slots.map(t=>{
-    const isBusy=busy.has(t);
-    return `<button class="time-slot ${selectedTime===t?'selected':''}" ${isBusy?'disabled':''} data-time="${t}">${t}${isBusy?' · OCUPADO':''}</button>`;
+    const isBusy=busy.has(t), isPast=past(t), off=isBusy||isPast;
+    return `<button class="time-slot ${selectedTime===t?'selected':''}" ${off?'disabled':''} data-time="${t}">${t}${isBusy?' · OCUPADO':isPast?' · PASÓ':''}</button>`;
   }).join('');
 }
 
 function subscribeAvailability() {
   if (unsubscribeAppointments) unsubscribeAppointments();
+  $('barber-live-state').textContent='';
   if (!selectedBarber || !selectedDate) return renderTimes([]);
-  const q=query(collection(db,'citas'), where('barberoId','==',selectedBarber.id), where('fecha','==',selectedDate));
+  // La disponibilidad se lee de `slots` (público y mínimo), no de `citas` (privadas).
+  const q=query(collection(db,'slots'), where('barberoId','==',selectedBarber.id), where('fecha','==',selectedDate));
   unsubscribeAppointments=onSnapshot(q,snap=>{
-    const citas=snap.docs.map(d=>({id:d.id,...d.data()})).filter(c=>!['cancelada'].includes(c.estado));
-    const working=citas.some(c=>c.estado==='trabajando');
-    // Si está trabajando, el bloque correspondiente queda ocupado igual que una cita.
-    renderTimes(citas);
-    if (working) $('barber-live-state').textContent='EN SERVICIO';
-  });
+    renderTimes(snap.docs.map(d=>d.data()));
+  },err=>{ console.error(err); notify('No se pudo cargar la disponibilidad.'); });
 }
 
 function validateStep() {
@@ -116,62 +122,52 @@ function validateStep() {
   return '';
 }
 
-function generateCode() {
-  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let result='';
-  for(let i=0;i<5;i++) result += chars[Math.floor(Math.random()*chars.length)];
-  return result;
-}
 
 async function createAppointment() {
   const error=validateStep(); if(error) return notify(error);
-  const citaRef=doc(db,'citas',appointmentId());
-  const barberRef=doc(db,'users',selectedBarber.id);
-  const userRef=doc(db,'users',currentUser.uid);
+  const btn=document.querySelector('#booking-form [type=submit]'); if(btn) btn.disabled=true;
   const { subtotal, pct, total } = currentPrices();
+  const slotId=`${selectedBarber.id}_${selectedDate}_${selectedTime.replace(':','')}`;
   const discountRef = appliedDiscount ? doc(db,'descuentos',appliedDiscount.codigo) : null;
-  try {
-    const result=await runTransaction(db, async tx=>{
-      const existing=await tx.get(citaRef);
-      if(existing.exists() && existing.data().estado!=='cancelada') throw new Error('Ese horario acaba de ser reservado por otra persona.');
-      const barberSnap=await tx.get(barberRef);
-      const clientSnap=await tx.get(userRef);
-      const barber=barberSnap.data()||{};
-      const client=clientSnap.data()||{};
-      if (discountRef) {
-        const dSnap=await tx.get(discountRef);
-        if(!dSnap.exists() || dSnap.data().estado!=='activo' || dSnap.data().clienteId!==currentUser.uid || Number(dSnap.data().porcentaje)!==pct)
-          throw new Error('El código de descuento ya no está disponible.');
-      }
-      const cita={
-        userId:currentUser.uid,
-        cliente:client.username || currentUser.email?.split('@')[0] || 'CLIENTE',
-        barberoId:selectedBarber.id,
-        barbero:barber.username || selectedBarber.username || 'BARBERO',
-        fecha:selectedDate, hora:selectedTime,
-        servicio:$('service').value,
-        subtotal,
-        total,
-        metodoPago:selectedPayment,
-        estado:'reservada',
-        estadoPago:'pendiente',
-        createdAt:serverTimestamp(), updatedAt:serverTimestamp()
-      };
-      if (discountRef) { cita.descuentoCodigo=appliedDiscount.codigo; cita.descuentoPct=pct; }
-      let radicado=null;
-      if(selectedPayment==='efectivo') {
-        radicado=generateCode();
-        tx.set(doc(db,'radicados',radicado), {codigo:radicado,citaId:citaRef.id,userId:currentUser.uid,barberoId:selectedBarber.id,total:cita.total,estado:'activo',createdAt:serverTimestamp()});
-        cita.radicado=radicado;
-      }
-      tx.set(citaRef,cita);
-      if (discountRef) tx.update(discountRef,{estado:'usado',citaId:citaRef.id,usadoAt:serverTimestamp()});
-      return {radicado};
-    });
-    $('booking-summary').innerHTML=`<div class="success-box"><strong>¡CITA RESERVADA!</strong><p>${escapeHtml(selectedDate)} · ${escapeHtml(selectedTime)}</p><p>${escapeHtml($('service').value)} · TOTAL ${money(total)}${pct?` (${pct}% DESCUENTO)`:''}</p>${result.radicado?`<p>RADICADO EN EFECTIVO: <strong>${result.radicado}</strong></p><small>Guárdalo para presentarlo en caja.</small>`:`<p>PAGO DIGITAL: ${escapeHtml(selectedPayment.toUpperCase())}</p>`}</div>`;
-    notify('Reserva creada correctamente.',true);
-    appliedDiscount=null; $('discount-code').value=''; discountMsg(''); renderPrice();
-  } catch(e) { console.error(e); notify(e.message || 'No se pudo crear la reserva.'); }
+  const servicio=$('service').value;
+  // Hasta 3 intentos: solo se reintenta si el radicado en efectivo choca con otro existente.
+  let lastErr=null;
+  for (let attempt=0; attempt<3; attempt++) {
+    const citaRef=doc(collection(db,'citas'));            // ID automático
+    const radicado = selectedPayment==='efectivo' ? randomCode(5) : null;
+    const cita={
+      userId:currentUser.uid,
+      cliente:currentProfile.username || currentUser.email?.split('@')[0] || 'CLIENTE',
+      barberoId:selectedBarber.id,
+      barbero:selectedBarber.username || 'BARBERO',
+      fecha:selectedDate, hora:selectedTime, servicio,
+      subtotal, total, metodoPago:selectedPayment,
+      estado:'reservada', estadoPago:'pendiente', slotId,
+      createdAt:serverTimestamp(), updatedAt:serverTimestamp()
+    };
+    if (discountRef) { cita.descuentoCodigo=appliedDiscount.codigo; cita.descuentoPct=pct; }
+    if (radicado) cita.radicado=radicado;
+    const batch=writeBatch(db);
+    batch.set(citaRef,cita);
+    // Slot con ID determinista: si ya existe, las reglas rechazan el batch (horario tomado).
+    batch.set(doc(db,'slots',slotId),{citaId:citaRef.id,userId:currentUser.uid,barberoId:selectedBarber.id,fecha:selectedDate,hora:selectedTime,createdAt:serverTimestamp()});
+    if (radicado) batch.set(doc(db,'radicados',radicado),{codigo:radicado,citaId:citaRef.id,userId:currentUser.uid,barberoId:selectedBarber.id,total,estado:'activo',createdAt:serverTimestamp()});
+    if (discountRef) batch.update(discountRef,{estado:'usado',citaId:citaRef.id,usadoAt:serverTimestamp()});
+    try {
+      await batch.commit();
+      $('booking-summary').innerHTML=`<div class="success-box"><strong>¡CITA RESERVADA!</strong><p>${escapeHtml(selectedDate)} · ${escapeHtml(selectedTime)}</p><p>${escapeHtml(servicio)} · TOTAL ${money(total)}${pct?` (${pct}% DESCUENTO)`:''}</p>${radicado?`<p>RADICADO EN EFECTIVO: <strong>${escapeHtml(radicado)}</strong></p><small>Guárdalo para presentarlo en caja.</small>`:`<p>PAGO DIGITAL: ${escapeHtml(selectedPayment.toUpperCase())}</p>`}</div>`;
+      notify('Reserva creada correctamente.',true);
+      appliedDiscount=null; $('discount-code').value=''; discountMsg(''); renderPrice();
+      selectedTime='';
+      if(btn) btn.disabled=false;
+      return;
+    } catch(e) {
+      lastErr=e; console.error(e);
+      if (!(e.code==='permission-denied' && radicado)) break;   // reintenta solo con efectivo
+    }
+  }
+  notify(lastErr?.code==='permission-denied' ? 'Ese horario ya fue reservado por otra persona o el código ya no es válido.' : (lastErr?.message || 'No se pudo crear la reserva.'));
+  if(btn) btn.disabled=false;
 }
 
 $('barber-list').addEventListener('click',async e=>{
@@ -181,7 +177,7 @@ $('barber-list').addEventListener('click',async e=>{
   subscribeAvailability();
 });
 $('booking-date').addEventListener('change',()=>{selectedDate=$('booking-date').value;selectedTime='';subscribeAvailability();});
-$('time-list').addEventListener('click',e=>{const btn=e.target.closest('[data-time]');if(!btn)return;selectedTime=btn.dataset.time;renderTimes(Array.from(document.querySelectorAll('.time-slot[disabled]')).map(x=>({hora:x.dataset.time})));});
+$('time-list').addEventListener('click',e=>{const btn=e.target.closest('[data-time]');if(!btn)return;selectedTime=btn.dataset.time;document.querySelectorAll('.time-slot').forEach(x=>x.classList.toggle('selected',x.dataset.time===selectedTime));});
 document.querySelectorAll('[data-payment]').forEach(btn=>btn.addEventListener('click',()=>{selectedPayment=btn.dataset.payment;document.querySelectorAll('[data-payment]').forEach(x=>x.classList.remove('selected'));btn.classList.add('selected');loadPaymentInfo();}));
 $('service').addEventListener('change',renderPrice);
 $('apply-discount').addEventListener('click',applyDiscount);

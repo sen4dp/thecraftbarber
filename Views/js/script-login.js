@@ -1,25 +1,9 @@
 // ==========================================
 // 1. IMPORTACIONES DE FIREBASE
 // ==========================================
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { auth, db, doc, getDoc } from './firebase-core.js';   // una sola configuración de Firebase
 
-// Tu configuración de Firebase
-const firebaseConfig = {
-    apiKey: "AIzaSyDc1Oha-1Es-7vS9jZe5DkXXuI17OYVzKY",
-    authDomain: "the-craftbarber.firebaseapp.com",
-    projectId: "the-craftbarber",
-    storageBucket: "the-craftbarber.firebasestorage.app",
-    messagingSenderId: "1064165237871",
-    appId: "1:1064165237871:web:3aae757a6f5a30bfb3d99a",
-    measurementId: "G-HCPNHKKS7C"
-};
-
-// Inicializar Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
 
 // ==========================================
 // 2. ESPERA A QUE EL HTML ESTÉ CARGADO
@@ -30,7 +14,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById('login-form');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const usernameInput = document.getElementById('username');
     const roleRadios = document.querySelectorAll('input[name="role"]');
     const errorDiv = document.getElementById('error-message');
     const homeBtn = document.getElementById("btn-home");
@@ -81,7 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
             
             const email = emailInput.value.trim();
             const password = passwordInput.value;
-            const username = usernameInput.value.trim();
             
             let selectedRole = 'usuario';
             for (const radio of roleRadios) {
@@ -91,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
             
-            if (!email || !password || !username) {
+            if (!email || !password) {
                 showError('❌ Por favor, completa todos los campos');
                 return;
             }
@@ -134,19 +116,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 // 5. Validación de coincidencia de rol
-                if (actualRole !== selectedRole && !(actualRole === 'dueno' && selectedRole === 'dueno')) {
+                const sameRole = actualRole === selectedRole || (actualRole === 'admin' && selectedRole === 'dueno');
+                if (!sameRole) {
                     showError('❌ El rol seleccionado no coincide con el registrado en tu cuenta.');
                     await auth.signOut();
                     return;
                 }
 
                 // 6. Almacenamiento local y redirección
-                const realUsername = profile.username || user.displayName || username;
-                localStorage.setItem('userRole', actualRole);
-                localStorage.setItem('username', realUsername);
-                
-                alert(`¡Bienvenido de vuelta, ${realUsername}!`);
-
+                const realUsername = profile.username || user.displayName || email.split('@')[0];
                 if (actualRole === 'barbero') {
                     window.location.href = 'dashboard-barbero.html';
                 } else if (actualRole === 'dueno' || actualRole === 'admin') {

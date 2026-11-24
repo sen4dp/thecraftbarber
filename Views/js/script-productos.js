@@ -6,7 +6,7 @@
 import {
   auth, db, onAuthStateChanged, collection, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
   query, where, onSnapshot, serverTimestamp, escapeHtml, money, getCurrentProfile,
-  isOwner, isBarber, compressImage
+  isOwner, isBarber, compressImage, num
 } from './firebase-core.js';
 import { CATEGORIAS, ORDER_STATUS, settleOrder, ordersOfSeller, safeImg } from './shop-core.js';
 
@@ -125,7 +125,7 @@ function renderOrders(items) {
       <div class="order-head"><span class="tag ${tagFor(o.estado)}">${ORDER_STATUS[o.estado] || escapeHtml(o.estado)}</span>
         <span class="order-meta">${o.createdAt?.toDate ? o.createdAt.toDate().toLocaleString('es-CO') : ''}</span></div>
       <div class="order-meta">CLIENTE: ${escapeHtml(o.cliente || '')} · PAGO: ${escapeHtml((o.metodoPago || '').toUpperCase())}${owner ? ` · VENDEDOR: ${escapeHtml(o.vendedor || '')}` : ''}</div>
-      <div class="order-items">${(o.items || []).map(i => `${i.cantidad}× ${escapeHtml(i.nombre)}`).join('<br>')}</div>
+      <div class="order-items">${(o.items || []).map(i => `${num(i.cantidad)}× ${escapeHtml(i.nombre)}`).join('<br>')}</div>
       ${cash && o.estado === 'pendiente' ? `<div>RADICADO: <span class="code-chip">${escapeHtml(o.radicado || '')}</span> <small>(se cobra en CAJA)</small></div>` : ''}
       <div class="order-total">TOTAL ${money(o.total)}</div>
       <div class="order-actions">

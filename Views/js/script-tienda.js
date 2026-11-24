@@ -3,7 +3,7 @@
 // ============================================================
 import {
   auth, db, onAuthStateChanged, collection, doc, updateDoc, query, where, onSnapshot,
-  serverTimestamp, escapeHtml, money, getCurrentProfile
+  serverTimestamp, escapeHtml, money, getCurrentProfile, num
 } from './firebase-core.js';
 import {
   CATEGORIAS, PAYMENT_METHODS, ORDER_STATUS, getCart, saveCart, cartCount,
@@ -192,7 +192,7 @@ function renderOrders(items) {
       <div class="order-head"><span class="tag ${tagFor(o.estado)}">${ORDER_STATUS[o.estado] || escapeHtml(o.estado)}</span>
         <span class="order-meta">${o.createdAt?.toDate ? o.createdAt.toDate().toLocaleString('es-CO') : ''}</span></div>
       <div class="order-meta">VENDEDOR: ${escapeHtml(o.vendedor || '')} · PAGO: ${escapeHtml((o.metodoPago || '').toUpperCase())}</div>
-      <div class="order-items">${(o.items || []).map(i => `${i.cantidad}× ${escapeHtml(i.nombre)}`).join('<br>')}</div>
+      <div class="order-items">${(o.items || []).map(i => `${num(i.cantidad)}× ${escapeHtml(i.nombre)}`).join('<br>')}</div>
       ${o.radicado && o.estado === 'pendiente' ? `<div>RADICADO: <span class="code-chip">${escapeHtml(o.radicado)}</span></div>` : ''}
       <div class="order-total">TOTAL ${money(o.total)}</div>
       ${o.estado === 'pendiente' ? `<div class="order-actions"><button class="mini-btn reject" data-cancel="${escapeHtml(o.id)}">CANCELAR PEDIDO</button></div>` : ''}

@@ -1,19 +1,20 @@
 import {
   auth, db, onAuthStateChanged, signOut, collection, doc, getDoc, getDocs,
-  query, where, onSnapshot, setDoc, updateDoc, serverTimestamp,
-  escapeHtml, parseAppointmentDate, getCurrentProfile, money
+  query, where, onSnapshot, setDoc, updateDoc, writeBatch, serverTimestamp,
+  escapeHtml, parseAppointmentDate, getCurrentProfile, money, num
 } from './firebase-core.js';
 
 const $=id=>document.getElementById(id);
 let currentUser=null, currentProfile=null;
 let unsubCitas=null, unsubNotes=null;
 let workingAppointmentId=null;
+let lastWorkingSent=undefined;   // evita escribir la presencia si no cambió el estado
 
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function greeting(){const h=new Date().getHours();return h<12?'BUENOS DÍAS':h<19?'BUENAS TARDES':'BUENAS NOCHES';}
 function formatDate(d){return d?.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'})||'';}
 function setInitial(name){const x=(name||'?').trim().charAt(0).toUpperCase();$('navbar-avatar-initial').textContent=x;$('modal-avatar-initial').textContent=x;}
-function statusLabel(s){return ({reservada:'RESERVADA',trabajando:'TRABAJANDO',recibida:'RECIBIDA',finalizada:'FINALIZADA',cancelada:'CANCELADA'})[s]||String(s||'').toUpperCase();}
+function statusLabel(s){return ({reservada:'RESERVADA',trabajando:'TRABAJANDO',recibida:'RECIBIDA',finalizada:'FINALIZADA',cancelada:'CANCELADA'})[s]||escapeHtml(String(s||'').toUpperCase());}
 
 async function setPresence(extra={}){
   await setDoc(doc(db,'presence',currentUser.uid),{online:true,username:currentProfile.username||currentUser.email?.split('@')[0]||'BARBERO',lastSeen:serverTimestamp(),...extra},{merge:true});
@@ -21,7 +22,11 @@ async function setPresence(extra={}){
 async function stopPresence(){await setDoc(doc(db,'presence',currentUser.uid),{online:false,working:false,lastSeen:serverTimestamp()},{merge:true});}
 
 function renderAgenda(citas){
-  citas.sort((a,b)=>(parseAppointmentDate(a)?.getTime()||Infinity)-(parseAppointmentDate(b)?.getTime()||Infinity));
+  // Primero lo de hoy y lo próximo (ascendente); después el historial (más reciente primero).
+  const nowMs=Date.now(), t=c=>parseAppointmentDate(c)?.getTime()||0;
+  const upcoming=citas.filter(c=>t(c)>=nowMs-36e5).sort((a,b)=>t(a)-t(b));
+  const past=citas.filter(c=>t(c)<nowMs-36e5).sort((a,b)=>t(b)-t(a));
+  citas=[...upcoming,...past];
   const today=citas.filter(c=>c.fecha===todayKey() && c.estado!=='cancelada');
   const next=citas.find(c=>parseAppointmentDate(c)>=new Date() && c.estado!=='cancelada');
   $('agenda-count').textContent=citas.filter(c=>c.estado!=='cancelada').length;
@@ -35,11 +40,13 @@ function renderAgenda(citas){
     <div class="appointment-row"><span class="appointment-label">HORA</span><span class="appointment-value">${escapeHtml(c.hora)}</span></div>
     <div class="appointment-row"><span class="appointment-label">CLIENTE</span><span class="appointment-value">${escapeHtml(c.cliente||'CLIENTE')}</span></div>
     <div class="appointment-row"><span class="appointment-label">SERVICIO</span><span class="appointment-value">${escapeHtml(c.servicio||'CORTE')}</span></div>
-    <div class="appointment-row"><span class="appointment-label">TOTAL</span><span class="appointment-value">${money(c.total)}${c.descuentoPct?` (-${c.descuentoPct}%)`:''}</span></div>
+    <div class="appointment-row"><span class="appointment-label">TOTAL</span><span class="appointment-value">${money(c.total)}${c.descuentoPct?` (-${num(c.descuentoPct)}%)`:''}</span></div>
+    <div class="appointment-row"><span class="appointment-label">PAGO</span><span class="appointment-value">${escapeHtml(String(c.metodoPago||'').toUpperCase())} · ${c.estadoPago==='pagado'?'PAGADO':'PENDIENTE'}</span></div>
     <div class="barber-appointment-actions">
-      ${c.estado==='reservada'?`<button class="mini-btn" data-work="${c.id}">EMPEZAR SERVICIO</button>`:''}
-      ${c.estado==='trabajando'?`<button class="mini-btn" data-finish="${c.id}">FINALIZAR / RECIBIR</button>`:''}
-      ${['reservada','trabajando'].includes(c.estado)?`<button class="mini-btn reject" data-cancel="${c.id}">CLIENTE NO LLEGÓ</button>`:''}
+      ${c.estado==='reservada'?`<button class="mini-btn" data-work="${escapeHtml(c.id)}">EMPEZAR SERVICIO</button>`:''}
+      ${c.estado==='trabajando'?`<button class="mini-btn" data-finish="${escapeHtml(c.id)}">FINALIZAR / RECIBIR</button>`:''}
+      ${['reservada','trabajando'].includes(c.estado)?`<button class="mini-btn reject" data-cancel="${escapeHtml(c.id)}">CLIENTE NO LLEGÓ</button>`:''}
+      ${c.estado!=='cancelada'&&c.estadoPago!=='pagado'&&c.metodoPago&&c.metodoPago!=='efectivo'?`<button class="mini-btn secondary" data-paid="${escapeHtml(c.id)}">CONFIRMAR PAGO RECIBIDO</button>`:''}
     </div>
   </div>`).join('');
 }
@@ -50,7 +57,8 @@ function subscribeAppointments(){
   unsubCitas=onSnapshot(q,snap=>{
     const citas=snap.docs.map(d=>({id:d.id,...d.data()}));
     workingAppointmentId=citas.find(c=>c.estado==='trabajando')?.id||null;
-    setPresence({working:!!workingAppointmentId,workingCitaId:workingAppointmentId||null});
+    // Solo escribe presencia cuando cambia "trabajando" (cuida la cuota de Spark).
+    if(lastWorkingSent!==workingAppointmentId){lastWorkingSent=workingAppointmentId;setPresence({working:!!workingAppointmentId,workingCitaId:workingAppointmentId||null}).catch(console.error);}
     renderAgenda(citas);
   });
 }
@@ -63,12 +71,15 @@ async function updateAppointment(id,status){
   if(status==='trabajando'){data.startedAt=serverTimestamp();await setPresence({working:true,workingCitaId:id});}
   if(status==='finalizada'||status==='recibida'){data.finishedAt=serverTimestamp();await setPresence({working:false,workingCitaId:null});}
   if(status==='cancelada'){data.cancelledAt=serverTimestamp();await setPresence({working:false,workingCitaId:null});}
-  await updateDoc(ref,data);
+  // Al cancelar se libera el horario (slot) en el MISMO batch.
+  if(status==='cancelada'&&cita.slotId){const b=writeBatch(db);b.update(ref,data);b.delete(doc(db,'slots',cita.slotId));await b.commit();}
+  else await updateDoc(ref,data);
 }
 
 $('agenda-grid').addEventListener('click',async e=>{
-  const w=e.target.closest('[data-work]'), f=e.target.closest('[data-finish]'), c=e.target.closest('[data-cancel]');
-  try{if(w)await updateAppointment(w.dataset.work,'trabajando');if(f)await updateAppointment(f.dataset.finish,'finalizada');if(c)await updateAppointment(c.dataset.cancel,'cancelada');}catch(err){console.error(err);alert('No se pudo actualizar la cita.');}
+  const w=e.target.closest('[data-work]'), f=e.target.closest('[data-finish]'), c=e.target.closest('[data-cancel]'), pd=e.target.closest('[data-paid]');
+  try{if(pd){if(!confirm('¿Confirmas que ya recibiste el dinero?'))return;await updateDoc(doc(db,'citas',pd.dataset.paid),{estadoPago:'pagado',paidAt:serverTimestamp(),updatedAt:serverTimestamp()});}
+  if(w)await updateAppointment(w.dataset.work,'trabajando');if(f)await updateAppointment(f.dataset.finish,'finalizada');if(c)await updateAppointment(c.dataset.cancel,'cancelada');}catch(err){console.error(err);alert('No se pudo actualizar la cita.');}
 });
 
 function renderNotes(items){
@@ -96,11 +107,13 @@ onAuthStateChanged(auth,async user=>{
   if(!user)return location.href='login.html';
   try{
     currentUser=user;currentProfile=await getCurrentProfile(user);
-    if(!currentProfile || currentProfile.role!=='barbero' || currentProfile.status!=='approved'){alert('Tu cuenta de barbero no está aprobada.');return signOut(auth);}
+    if(!currentProfile || currentProfile.role!=='barbero' || currentProfile.status!=='approved'){alert('Tu cuenta de barbero no está aprobada.');await signOut(auth);return location.href='login.html';}
     const name=currentProfile.username||user.displayName||user.email?.split('@')[0]||'BARBERO';
     $('user-name-display').textContent=name.toUpperCase();$('hero-username').textContent=name.toUpperCase();$('hero-greeting').textContent=greeting();$('hero-date').textContent=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'}).toUpperCase();$('modal-username').value=name.toUpperCase();$('modal-email').value=user.email||'';setInitial(name);
     await setPresence({working:false,workingCitaId:null});
-    setInterval(()=>setPresence({working:!!workingAppointmentId,workingCitaId:workingAppointmentId||null}),30000);
+    // Latido cada 2 min (antes 30 s); el Dueño considera "en línea" solo si el último latido es reciente.
+    const hb=setInterval(()=>setPresence({working:!!workingAppointmentId,workingCitaId:workingAppointmentId||null}).catch(console.error),120000);
+    window.addEventListener('pagehide',()=>clearInterval(hb));
     subscribeAppointments();subscribeNotes();await loadPayments();
   }catch(err){console.error(err);alert('No se pudo cargar tu dashboard.');}
 });

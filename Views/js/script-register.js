@@ -1,25 +1,9 @@
 // ==========================================
 // 1. IMPORTACIONES DE FIREBASE
 // ==========================================
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-import { getFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import { createUserWithEmailAndPassword, updateProfile } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { auth, db, doc, writeBatch, serverTimestamp } from './firebase-core.js';   // una sola configuración de Firebase
 
-// Tu configuración de Firebase
-const firebaseConfig = {
-    apiKey: "AIzaSyDc1Oha-1Es-7vS9jZe5DkXXuI17OYVzKY",
-    authDomain: "the-craftbarber.firebaseapp.com",
-    projectId: "the-craftbarber",
-    storageBucket: "the-craftbarber.firebasestorage.app",
-    messagingSenderId: "1064165237871",
-    appId: "1:1064165237871:web:3aae757a6f5a30bfb3d99a",
-    measurementId: "G-HCPNHKKS7C"
-};
-
-// Inicializar Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
 
 // ==========================================
 // 2. ESPERA A QUE EL HTML ESTÉ CARGADO
@@ -132,23 +116,25 @@ document.addEventListener("DOMContentLoaded", () => {
                     status: selectedRole === 'barbero' ? 'pending' : 'approved',
                     createdAt: serverTimestamp()
                 };
-                await setDoc(doc(db, 'users', user.uid), profile);
-
+                // Perfil + solicitud en UN solo batch (todo o nada).
+                const batch = writeBatch(db);
+                batch.set(doc(db, 'users', user.uid), profile);
                 if (selectedRole === 'barbero') {
-                    await setDoc(doc(db, 'barberApplications', user.uid), {
+                    batch.set(doc(db, 'barberApplications', user.uid), {
                         username,
                         email,
                         status: 'pending',
                         createdAt: serverTimestamp()
                     });
+                }
+                await batch.commit();
+
+                if (selectedRole === 'barbero') {
                     showMessage('✅ Solicitud enviada. Un administrador debe aprobar tu cuenta de barbero.', false);
                 } else {
                     showMessage('✅ ¡Cuenta creada exitosamente! Redirigiendo...', false);
                 }
 
-                localStorage.setItem('userRole', selectedRole);
-                localStorage.setItem('username', username);
-                
                 // Redirigir al login después de 2 segundos para dar tiempo a ver el éxito
                 setTimeout(() => {
                     window.location.href = 'login.html';

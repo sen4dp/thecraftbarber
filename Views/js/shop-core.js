@@ -7,7 +7,7 @@
 // ============================================================
 import {
   db, collection, doc, getDoc, getDocs, query, where, runTransaction, writeBatch,
-  serverTimestamp
+  serverTimestamp, randomCode
 } from './firebase-core.js';
 
 // ------------------------------------------------------------
@@ -60,12 +60,7 @@ export async function loadSellerPayments(uid) {
 // ------------------------------------------------------------
 // Radicados de 5 caracteres (mismo alfabeto que las citas, sin 0/O/1/I)
 // ------------------------------------------------------------
-const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-export function generateCode() {
-  let r = '';
-  for (let i = 0; i < 5; i++) r += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
-  return r;
-}
+export const generateCode = () => randomCode(5);   // criptográfico (crypto.getRandomValues)
 
 // ------------------------------------------------------------
 // CHECKOUT
@@ -84,6 +79,7 @@ export async function checkout({ user, profile, lines, metodo }) {
     const snap = await getDoc(doc(db, 'productos', l.producto.id));
     if (!snap.exists() || snap.data().activo === false) throw new Error(`«${l.producto.nombre}» ya no está disponible.`);
     const p = { id: snap.id, ...snap.data() };
+    if (!Number.isInteger(l.cantidad) || l.cantidad < 1 || l.cantidad > 99) throw new Error('Cantidad no válida.');
     if (l.cantidad > p.stock) throw new Error(`Solo quedan ${p.stock} unidad(es) de «${p.nombre}».`);
     fresh.push({ producto: p, cantidad: l.cantidad });
   }
@@ -160,6 +156,11 @@ export async function settleOrder({ ordenId, radicado = null, actorUid, actorPro
     if (!oSnap.exists()) throw new Error('El pedido no existe.');
     const o = oSnap.data();
     if (o.estado !== 'pendiente') throw new Error('Este pedido ya no está pendiente.');
+    // Nunca se confía en lo que escribió el cliente: cantidades enteras 1..99.
+    for (const it of o.items || []) {
+      if (!Number.isInteger(it.cantidad) || it.cantidad < 1 || it.cantidad > 99)
+        throw new Error('Pedido inválido: cantidad no permitida.');
+    }
     if (!isOwnerRole && o.vendedorId !== actorUid) throw new Error('Este pedido pertenece a otro vendedor.');
 
     let radRef = null;

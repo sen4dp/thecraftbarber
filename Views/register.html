@@ -35,33 +35,31 @@
 
             <form id="register-form" class="register-form">
                 <div class="input-group">
-                    <label>NOMBRE DE USUARIO</label>
-                    <input type="text" id="reg-username" required>
+                    <label for="reg-username">NOMBRE DE USUARIO</label>
+                    <input type="text" id="reg-username" autocomplete="username" required>
                 </div>
                 
                 <div class="input-group">
-                    <label>EMAIL</label>
-                    <input type="email" id="reg-email" required>
+                    <label for="reg-email">EMAIL</label>
+                    <input type="email" id="reg-email" autocomplete="email" required>
                 </div>
 
                 <div class="input-group">
-                    <label>CONTRASEÑA</label>
-                    <input type="password" id="reg-password" required>
+                    <label for="reg-password">CONTRASEÑA</label>
+                    <input type="password" id="reg-password" autocomplete="new-password" required>
                 </div>
 
                 <div class="input-group">
-                    <label>REPETIR CONTRASEÑA</label>
-                    <input type="password" id="reg-confirm-password" required>
+                    <label for="reg-confirm-password">REPETIR CONTRASEÑA</label>
+                    <input type="password" id="reg-confirm-password" autocomplete="new-password" required>
                 </div>
 
                 <button type="submit" class="mc-btn-register">REGISTRARSE</button>
             </form>
         </div>
 
-        <!-- Agregar div para mostrar mensajes -->
             <div id="message" style="margin-top: 15px; text-align: center; font-size: 12px; display: none;"></div>
         </div>
-
 
         <div class="mc-panel-bridge animated-pop-in">
             <h1 class="mc-title">¡BIENVENIDO A THE CRAFTBARBER!</h1>

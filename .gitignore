@@ -1,0 +1,4 @@
+# Archivos de agentes de IA y dependencias
+Models/.agents/
+node_modules/
+.env

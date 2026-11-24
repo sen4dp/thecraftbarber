@@ -48,6 +48,16 @@ export const SERVICES = [
 export const servicePrice = nombre => SERVICES.find(x => x.nombre === nombre)?.precio ?? 0;
 export const discountedTotal = (subtotal, pct) => Math.round(subtotal * (100 - pct) / 100);
 
+// Número seguro: úsalo con TODO dato que venga de documentos escritos por clientes (evita XSS).
+export const num = v => (Number.isFinite(Number(v)) ? Number(v) : 0);
+
+// Código aleatorio criptográfico de n caracteres (sin 0/O/1/I).
+export function randomCode(n = 5) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const buf = new Uint32Array(n); crypto.getRandomValues(buf);
+  return Array.from(buf, x => chars[x % chars.length]).join('');
+}
+
 export function isOwner(profile) {
   return profile?.role === 'dueno' || profile?.role === 'admin';
 }
@@ -95,25 +105,19 @@ function keyDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 export function isColombiaHoliday(date) {
-  const year = date.getFullYear();
-  const fixed = [[1,1],[5,1],[7,20],[8,7],[12,8],[12,25]];
-  const holidays = new Set();
-  fixed.forEach(([m,d]) => {
-    const x = new Date(year,m-1,d);
-    // Ley Emiliani: estos festivos se trasladan al lunes cuando no caen lunes.
-    if ([1,5,7,8,12].includes(m)) holidays.add(keyDate(x.getDay()===1 ? x : mondayAfter(x,0)));
-  });
-  // Día de la Raza, Independencia de Cartagena, San José, Ascensión, Corpus Christi y Sagrado Corazón.
-  [[3,19],[6,29],[8,15],[10,12],[11,1],[11,11]].forEach(([m,d]) => holidays.add(keyDate(mondayAfter(new Date(year,m-1,d),0))));
-  const easter = easterDate(year);
-  const goodFriday = new Date(easter); goodFriday.setDate(goodFriday.getDate()-2);
-  const holyThursday = new Date(easter); holyThursday.setDate(holyThursday.getDate()-3);
-  holidays.add(keyDate(holyThursday)); holidays.add(keyDate(goodFriday));
-  holidays.add(keyDate(mondayAfter(easter,0)));
-  const asc = new Date(easter); asc.setDate(asc.getDate()+43); holidays.add(keyDate(mondayAfter(asc,0)));
-  const corpus = new Date(easter); corpus.setDate(corpus.getDate()+64); holidays.add(keyDate(mondayAfter(corpus,0)));
-  const sacred = new Date(easter); sacred.setDate(sacred.getDate()+68); holidays.add(keyDate(mondayAfter(sacred,0)));
-  return holidays.has(keyDate(date));
+  const y = date.getFullYear();
+  const H = new Set();
+  const add = d => H.add(keyDate(d));
+  // Fijos (NO se trasladan al lunes)
+  [[1,1],[5,1],[7,20],[8,7],[12,8],[12,25]].forEach(([m,d]) => add(new Date(y,m-1,d)));
+  // Ley Emiliani: se pasan al lunes siguiente (incluye Reyes, 6 ene)
+  [[1,6],[3,19],[6,29],[8,15],[10,12],[11,1],[11,11]].forEach(([m,d]) => add(mondayAfter(new Date(y,m-1,d),0)));
+  // Semana Santa: jueves y viernes santo (el Lunes de Pascua NO es festivo)
+  const e = easterDate(y), off = n => { const x = new Date(e); x.setDate(x.getDate()+n); return x; };
+  add(off(-3)); add(off(-2));
+  // Móviles al lunes: Ascensión (+39), Corpus Christi (+60), Sagrado Corazón (+68)
+  [39,60,68].forEach(n => add(mondayAfter(off(n),0)));
+  return H.has(keyDate(date));
 }
 
 export function scheduleForDate(date) {

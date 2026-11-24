@@ -2,16 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginBtn = document.getElementById("btn-login");
     const registerBtn = document.getElementById("btn-register");
 
-    // Opcional: Audio de click estilo Minecraft
-    // Puedes usar un archivo .mp3 corto de un click clásico.
-    const clickSound = new Audio('click.mp3'); 
-    clickSound.volume = 0.5;
-
-    function playClick() {
-        // Reinicia el audio si se presiona rápido
-        clickSound.currentTime = 0;
-        clickSound.play().catch(err => console.log("Audio esperando interacción."));
-    }
+    function playClick() {}   // sin sonido (click.mp3 no existe)
 
     // Evento para Iniciar Sesión
     loginBtn.addEventListener("click", () => {

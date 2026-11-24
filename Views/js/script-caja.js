@@ -1,10 +1,10 @@
-import {auth,db,onAuthStateChanged,collection,doc,getDoc,runTransaction,getCurrentProfile,escapeHtml,money,serverTimestamp} from './firebase-core.js';
+import {auth,db,onAuthStateChanged,collection,doc,getDoc,runTransaction,getCurrentProfile,escapeHtml,money,serverTimestamp,num} from './firebase-core.js';
 import {settleOrder} from './shop-core.js';
 const $=id=>document.getElementById(id);
 let profile=null;
 
 function showCita(cita){
-  const desc=cita.descuentoPct?`<p><strong>DESCUENTO</strong><br>${cita.descuentoPct}% (${escapeHtml(cita.descuentoCodigo||'')}) · subtotal ${money(cita.subtotal)}</p>`:'';
+  const desc=cita.descuentoPct?`<p><strong>DESCUENTO</strong><br>${num(cita.descuentoPct)}% (${escapeHtml(cita.descuentoCodigo||'')}) · subtotal ${money(cita.subtotal)}</p>`:'';
   $('cash-result').innerHTML=`<div class="cash-box"><p><strong>CLIENTE</strong><br>${escapeHtml(cita.cliente||'CLIENTE')}</p><p><strong>SERVICIO</strong><br>${escapeHtml(cita.servicio||'')}</p>${desc}<p><strong>TOTAL EN EFECTIVO</strong><br>${money(cita.total)}</p><p><strong>ESTADO CITA</strong><br>${escapeHtml(cita.estado||'')}</p><button id="btn-redeem" class="btn-primary">CONFIRMAR PAGO / CANJEAR</button></div>`;
   $('btn-redeem').onclick=()=>redeem(cita);
 }
@@ -38,12 +38,13 @@ async function showOrden(ordenId,code){
   if(orden.estado!=='pendiente'){$('cash-result').textContent='ESTE PEDIDO YA NO ESTÁ PENDIENTE ('+(orden.estado||'').toUpperCase()+').';return;}
   let total=0,rows='',problems=[];
   for(const it of orden.items||[]){
+    if(!Number.isInteger(it.cantidad)||it.cantidad<1||it.cantidad>99){problems.push('Cantidad inválida en «'+it.nombre+'».');continue;}
     const p=await getDoc(doc(db,'productos',it.productoId));
     if(!p.exists()){problems.push('«'+it.nombre+'» ya no existe en el catálogo.');continue;}
     const d=p.data();
     if(d.stock<it.cantidad)problems.push('Stock insuficiente de «'+it.nombre+'» (quedan '+d.stock+').');
     total+=d.precio*it.cantidad;
-    rows+='<li>'+it.cantidad+'× '+escapeHtml(it.nombre)+' — '+money(d.precio*it.cantidad)+'</li>';
+    rows+='<li>'+num(it.cantidad)+'× '+escapeHtml(it.nombre)+' — '+money(d.precio*it.cantidad)+'</li>';
   }
   $('cash-result').innerHTML='<div class="cash-box"><p><strong>PEDIDO DE PRODUCTOS</strong></p><p><strong>CLIENTE</strong><br>'+escapeHtml(orden.cliente||'CLIENTE')+'</p><ul class="cash-items">'+rows+'</ul><p><strong>TOTAL EN EFECTIVO</strong><br>'+money(total)+'</p>'
     +(problems.length?'<p class="cash-warn">'+problems.map(escapeHtml).join('<br>')+'</p>':'<button id="btn-redeem" class="btn-primary">CONFIRMAR PAGO / CANJEAR</button>')+'</div>';
@@ -68,8 +69,10 @@ async function redeem(cita){
       if(!c.exists())throw new Error('La cita no existe.');
       const d=c.data();
       if(profile.role==='barbero'&&d.barberoId!==me)throw new Error('Esta cita pertenece a otro barbero.');
-      if(!['reservada','trabajando'].includes(d.estado))throw new Error('La cita no puede cobrarse en este estado.');
-      const finalState=d.estado==='trabajando'?'finalizada':'recibida';
+      if(d.estadoPago==='pagado')throw new Error('Esta cita ya fue cobrada.');
+      // Acepta también citas ya finalizadas/recibidas que aún no se han pagado.
+      if(!['reservada','trabajando','finalizada','recibida'].includes(d.estado))throw new Error('La cita no puede cobrarse en este estado.');
+      const finalState=d.estado==='trabajando'?'finalizada':(d.estado==='reservada'?'recibida':d.estado);
       tx.update(radRef,{estado:'usado',usedAt:serverTimestamp(),usedBy:me});
       tx.set(txRef,{citaId:cita.id,radicado:code,metodo:'efectivo',total:d.total||0,estado:'Pago realizado con éxito',processedBy:me,createdAt:serverTimestamp()});
       tx.update(citaRef,{estado:finalState,estadoPago:'pagado',paidAt:serverTimestamp(),updatedAt:serverTimestamp()});
